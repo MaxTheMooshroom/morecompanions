@@ -1,0 +1,23 @@
+modLoader = "javafml"
+loaderVersion = "[40,)"
+license = "MIT"
+
+[[mods]]
+modId = "morecompanions"
+version = "1.0.0"
+description = "Activates temporal modifiers of all companions equipped in Curios head slots."
+authors = "QiyanaMark"
+
+[[dependencies."morecompanions"]]
+modId = "forge"
+mandatory = true
+versionRange = "[40,)"  # Replace with actual Forge version range
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies."morecompanions"]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.18.2,)" # Replace with actual Minecraft version range
+ordering = "NONE"
+side = "BOTH"

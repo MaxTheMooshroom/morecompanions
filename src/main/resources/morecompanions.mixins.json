@@ -1,0 +1,10 @@
+{
+  "required": true,
+  "package": "net.qiyanamark.companionactivator.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "MixinCompanionDataSetActive"
+  ],
+  "client": [],
+  "server": []
+}
