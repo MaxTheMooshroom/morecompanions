@@ -1,23 +1,44 @@
-modLoader = "javafml"
-loaderVersion = "[40,)"
-license = "MIT"
+modLoader="javafml"
+loaderVersion="[40,)"
+license="MIT"
 
 [[mods]]
-modId = "morecompanions"
-version = "1.0.0"
-description = "Activates temporal modifiers of all companions equipped in Curios head slots."
-authors = "QiyanaMark"
+modId="companionpouch"
+version="${file.jarVersion}"
+displayName="Companion Pouch"
+updateJSONURL=""
+displayURL=""
+logoFile=""
+credits=""
+authors="QiyanaMark"
+description='''
+A pouch that can store up to 3 companions and activate all their temporal modifiers simultaneously in vaults.
+'''
 
-[[dependencies."morecompanions"]]
-modId = "forge"
-mandatory = true
-versionRange = "[40,)"  # Replace with actual Forge version range
-ordering = "NONE"
-side = "BOTH"
+[[dependencies.companionpouch]]
+modId="forge"
+mandatory=true
+versionRange="[40.2.0,)"
+ordering="NONE"
+side="BOTH"
 
-[[dependencies."morecompanions"]]
-modId = "minecraft"
-mandatory = true
-versionRange = "[1.18.2,)" # Replace with actual Minecraft version range
-ordering = "NONE"
-side = "BOTH"
+[[dependencies.companionpouch]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.18.2,1.19)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.companionpouch]]
+modId="the_vault"
+mandatory=true
+versionRange="[3.0.0,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.companionpouch]]
+modId="curios"
+mandatory=true
+versionRange="[5.0.0,)"
+ordering="NONE"
+side="BOTH"
