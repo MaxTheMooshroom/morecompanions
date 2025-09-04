@@ -6,6 +6,8 @@ import java.util.UUID;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 
+// import iskallia.vault.block.CompanionHomeBlock;
+
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
@@ -23,38 +25,32 @@ import top.theillusivec4.curios.api.type.util.ICuriosHelper;
 import iskallia.vault.item.BasicItem;
 import static iskallia.vault.init.ModItems.VAULT_MOD_GROUP;
 
-public class CompanionPouchItem extends BasicItem implements ICurioItem {
-    public static final String ITEM_ID = "companion_pouch";
+/**
+ * Included for future extensions (adding different companion pouches)
+ */
+public abstract class BaseItemPouchCompanion extends BasicItem implements ICurioItem {
+    protected final ResourceLocation itemResource;
 
-    public CompanionPouchItem(ResourceLocation id) {
+    public BaseItemPouchCompanion(ResourceLocation id) {
         super(id, new Properties().stacksTo(1).tab(VAULT_MOD_GROUP));
+        this.itemResource = id;
     }
 
-    @Override
-    public void curioTick(SlotContext slotContext, ItemStack stack) {
-        LivingEntity player = slotContext.entity();
-        if (player.getLevel().isClientSide || !stack.hasTag()) {
-            return;
-        }
-
-        CompoundTag tag = stack.getOrCreateTag();
-        if (!tag.contains("StoredCurios") || !tag.contains("id")) return;
-
-        LazyOptional<ICuriosItemHandler> optHandler = CuriosApi.getCuriosHelper().getCuriosHandler(player);
-        if (!optHandler.isPresent()) return;
-
-        ICuriosItemHandler handler = optHandler.resolve().get();
+    public ResourceLocation id() {
+        return this.itemResource;
     }
 
     @Override
     public boolean canEquip(SlotContext slotContext, ItemStack stack) {
-        Optional<SlotResult> slot = CuriosApi.getCuriosHelper().findCurio(slotContext.entity(), ITEM_ID, 0);
+        Optional<SlotResult> slot = CuriosApi.getCuriosHelper().findCurio(slotContext.entity(), this.id().getPath(), 0);
         return slot.map(slotResult -> slotResult.stack().isEmpty()).orElse(true);
     }
     
     @Override
-    public void onEquip(SlotContext slotContext, ItemStack prevStack, ItemStack stack) {
-        
+    public void onEquip(SlotContext slotContext, ItemStack prevStack, ItemStack newStack) {
+        Optional<SlotResult> slot = CuriosApi.getCuriosHelper().findCurio(slotContext.entity(), this.id().getPath(), 0);
+
+        // TODO
     }
 
     @Override
@@ -75,8 +71,8 @@ public class CompanionPouchItem extends BasicItem implements ICurioItem {
     }
 
     @Override
-    public void onUnequip(SlotContext slotContext, ItemStack newStack, ItemStack stack) {
-        
+    public void onUnequip(SlotContext slotContext, ItemStack newStack, ItemStack prevStack) {
+        // TODO
     }
 
     @Override
