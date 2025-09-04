@@ -11,7 +11,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
-import net.qiyanamark.companionpouch.catalogs.CatalogMenu;
+import net.qiyanamark.companionpouch.catalog.CatalogMenu;
 
 public class MenuPouchCompanion extends AbstractContainerMenu {
     public static final String MENU_ID = "container_pouch_companion";

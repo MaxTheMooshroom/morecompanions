@@ -1,4 +1,4 @@
-package net.qiyanamark.companionpouch.catalogs;
+package net.qiyanamark.companionpouch.catalog;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;

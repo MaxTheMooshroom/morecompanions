@@ -1,4 +1,4 @@
-package net.qiyanamark.companionpouch.catalogs;
+package net.qiyanamark.companionpouch.catalog;
 
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.event.RegistryEvent;
