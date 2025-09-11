@@ -143,8 +143,6 @@ repositories {
 
 
 dependencies {
-    implementation 'org.jetbrains:annotations:24.0.0'
-
     // Specify the version of Minecraft to use.
     // Any artifact can be supplied so long as it has a "userdev" classifier artifact and is a compatible patcher artifact.
     // The "userdev" classifier will be requested and setup by ForgeGradle.
@@ -159,8 +157,13 @@ dependencies {
 
     annotationProcessor "org.spongepowered:mixin:0.8.5:processor"
 
+    implementation 'org.jetbrains:annotations:24.0.0'
+
     implementation fg.deobf("curse.maven:vault-hunters-official-mod-458203:${vault_version}")
     implementation fg.deobf('curse.maven:curios-309927:4985315')
+    implementation fg.deobf('curse.maven:geckolib-388172:4181370')
+
+    runtimeOnly fg.deobf('curse.maven:geckolib-388172:4181370')
 }
 
 mixin {

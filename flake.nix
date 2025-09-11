@@ -20,10 +20,12 @@
             git
             packwiz
             xvfb-run
+            mesa
+            libGL
           ];
 
           JAVA_HOME = pkgs.openjdk17;
-          GRADLE_OPTS = "-Dorg.gradle.jvmargs=-Xmx10G";
+          GRADLE_OPTS = "-Dorg.gradle.jvmargs=-Xmx4G";
         };
       });
 }
