@@ -1,0 +1,73 @@
+package net.qiyanamark.companionpouch.menu.container;
+
+import iskallia.vault.item.CompanionItem;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+
+import net.minecraftforge.items.CapabilityItemHandler;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.SlotItemHandler;
+import net.qiyanamark.companionpouch.catalog.CatalogMenu;
+import net.qiyanamark.companionpouch.helper.annotations.Extends;
+
+public class MenuContainerPouchCompanion extends AbstractContainerMenu {
+    public static final String MENU_ID = "container_pouch_companion";
+
+    private final ItemStack pouchStack;
+    private final IItemHandler handler;
+
+    // Server-side ctor
+    public MenuContainerPouchCompanion(int id, Inventory inv, ItemStack pouchStack) {
+        super(CatalogMenu.COMPANION_POUCH, id);
+        this.pouchStack = pouchStack;
+        this.handler = pouchStack
+                .getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY)
+                .orElseThrow(IllegalStateException::new);
+
+        defineLayout(inv);
+    }
+
+    // Client-side ctor from network
+    public static MenuContainerPouchCompanion fromNetwork(int id, Inventory inv, FriendlyByteBuf buf) {
+        boolean main = buf.readBoolean();
+        ItemStack pouch = main ? inv.player.getMainHandItem() : inv.player.getOffhandItem();
+        return new MenuContainerPouchCompanion(id, inv, pouch);
+    }
+
+    @Override
+    @Extends(AbstractContainerMenu.class)
+    public boolean stillValid(Player player) {
+        return player.getMainHandItem() == pouchStack || player.getOffhandItem() == pouchStack;
+    }
+
+    private void defineLayout(Inventory inv) {
+        this.addSlot(new SlotContainerPouch(handler, 0, 62, 20));
+        this.addSlot(new SlotContainerPouch(handler, 1, 80, 20));
+        this.addSlot(new SlotContainerPouch(handler, 2, 98, 20));
+
+        for (int col = 0; col < 9; col++) {
+            // Hotbar 9x1
+            this.addSlot(new Slot(inv, col, 8 + col * 18, 109));
+
+            // Player inventory 9x3
+            for (int row = 0; row < 3; row++) {
+                this.addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 51 + row * 18));
+            }
+        }
+    }
+
+    private class SlotContainerPouch extends SlotItemHandler {
+        public SlotContainerPouch(IItemHandler itemHandler, int index, int xPosition, int yPosition) {
+            super(itemHandler, index, xPosition, yPosition);
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            return stack.getItem() instanceof CompanionItem;
+        }
+    }
+}

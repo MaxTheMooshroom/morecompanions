@@ -2,7 +2,6 @@ package net.qiyanamark.companionpouch.mixins;
 
 import java.util.Optional;
 
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
@@ -14,11 +13,16 @@ import top.theillusivec4.curios.api.CuriosApi;
 import iskallia.vault.item.CompanionItem;
 
 @Mixin(value = CompanionItem.class, remap = false)
-public abstract class MixinCompanionItem extends CompanionItem {
-    public MixinCompanionItem(ResourceLocation id, Properties properties) {
-        super(id, properties);
-    }
-
+public abstract class MixinCompanionItem {
+    /**
+     * @reason
+     * The logic is completely replaced to search all curio
+     * slots for the first companion item. A helper is not sufficient
+     * because we want existing code to use the new behaviour as well.
+     * @author MaxTheMooshroom (Maxine Zick <maxine@pnk.dev>)
+     * @param entity
+     * @return the first equipped companion, if any
+     */
     @Overwrite(remap = false)
     public static Optional<ItemStack> getCompanion(LivingEntity entity) {
         if (entity.isSpectator()) return Optional.empty();

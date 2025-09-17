@@ -6,7 +6,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.qiyanamark.companionpouch.catalog.CatalogContainer;
+import net.qiyanamark.companionpouch.catalog.CatalogMenu;
 import net.qiyanamark.companionpouch.screen.ScreenPouchCompanion;
 
 @Mod(ModCompanionPouch.MOD_ID)
@@ -25,7 +25,7 @@ public class ModCompanionPouch {
 
     private void clientSetup(final FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
-            MenuScreens.register(CatalogContainer.COMPANION_POUCH, ScreenPouchCompanion::new);
+            MenuScreens.register(CatalogMenu.COMPANION_POUCH, ScreenPouchCompanion::new);
         });
     }
 }
