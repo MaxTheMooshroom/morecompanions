@@ -21,6 +21,6 @@ public class CatalogItem {
     }
 
     static {
-        POUCH_BASIC = new ItemPouchCompanion("basic", 3);
+        POUCH_BASIC = new ItemPouchCompanion();
     }
 }

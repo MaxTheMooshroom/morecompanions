@@ -1,4 +1,5 @@
 {
-  "item.companionpouch.pouch_companion.basic": "Basic Companion Pouch",
-  "screen.companionpouch.pouch_companion.basic": "Basic Companion Pouch"
+  "item.companionpouch.pouch_companion": "Companion Pouch",
+  "screen.companionpouch.pouch_companion": "Companion Pouch",
+  "curios.identifier.pouch_companion": "Companion Pouch"
 }

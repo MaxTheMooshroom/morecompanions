@@ -8,11 +8,14 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.api.distmarker.Dist;
 import net.qiyanamark.companionpouch.ModCompanionPouch;
-import net.qiyanamark.companionpouch.helper.HelperGuiSlot;
 import net.qiyanamark.companionpouch.helper.annotations.Extends;
 import net.qiyanamark.companionpouch.menu.container.MenuContainerPouchCompanion;
 
+@OnlyIn(Dist.CLIENT)
 public class ScreenPouchCompanion extends AbstractContainerScreen<MenuContainerPouchCompanion> {
     private static final ResourceLocation BG = new ResourceLocation(ModCompanionPouch.MOD_ID, "textures/gui/container/pouch_companion.png");
 
@@ -33,7 +36,6 @@ public class ScreenPouchCompanion extends AbstractContainerScreen<MenuContainerP
     }
 
     protected void renderBgSlots(PoseStack pPoseStack) {
-        HelperGuiSlot.renderEach(pPoseStack, this.menu.slots);
     }
 
     @Override
@@ -46,7 +48,6 @@ public class ScreenPouchCompanion extends AbstractContainerScreen<MenuContainerP
     @Override
     @Extends(AbstractContainerScreen.class)
     public void render(PoseStack pose, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(pose);
         super.render(pose, mouseX, mouseY, partialTicks);
         this.renderTooltip(pose, mouseX, mouseY);
     }

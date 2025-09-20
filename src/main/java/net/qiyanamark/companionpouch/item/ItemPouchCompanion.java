@@ -9,6 +9,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -16,36 +17,39 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.extensions.IForgeItem;
 import net.minecraftforge.network.NetworkHooks;
-
+import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotContext;
+import top.theillusivec4.curios.api.SlotTypePreset;
 import top.theillusivec4.curios.api.type.capability.ICurioItem;
-
+import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
+import top.theillusivec4.curios.api.type.inventory.IDynamicStackHandler;
 import iskallia.vault.item.CompanionItem;
+import iskallia.vault.integration.IntegrationCurios;
 
 import static iskallia.vault.init.ModItems.VAULT_MOD_GROUP;
 
+import java.util.Optional;
+import java.util.function.Predicate;
+import org.apache.logging.log4j.LogManager;
+
 import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.capabilities.CapabilitiesPouchCompanion;
+import net.qiyanamark.companionpouch.helper.HelperCompanions;
 import net.qiyanamark.companionpouch.helper.annotations.Extends;
 import net.qiyanamark.companionpouch.helper.annotations.Implements;
 import net.qiyanamark.companionpouch.menu.container.MenuContainerPouchCompanion;
 
 public class ItemPouchCompanion extends Item implements ICurioItem {
     public static final String REL_STRING = "pouch_companion";
+    public static final byte DEFAULT_SLOT_COUNT = 3;
 
-    protected final String containerI18n;
-    protected final int slotCount;
-
-    protected ItemPouchCompanion(ResourceLocation rel, int slotCount, String containerI18n) {
+    protected ItemPouchCompanion(ResourceLocation rel) {
         super(new Properties().stacksTo(1).tab(VAULT_MOD_GROUP));
         this.setRegistryName(rel);
-
-        this.slotCount = slotCount;
-        this.containerI18n = containerI18n;
     }
 
-    public ItemPouchCompanion(String subtype, int slotCount) {
-        this(ModCompanionPouch.rel(REL_STRING), slotCount, "container.companionpouch." + REL_STRING + "." + subtype);
+    public ItemPouchCompanion() {
+        this(ModCompanionPouch.rel(REL_STRING));
     }
 
     @Override
@@ -54,7 +58,14 @@ public class ItemPouchCompanion extends Item implements ICurioItem {
         ItemStack stack = player.getItemInHand(hand);
 
         if (player instanceof ServerPlayer sPlayer) {
-            NetworkHooks.openGui(sPlayer, this.getGui(hand), buf -> buf.writeBoolean(hand == InteractionHand.MAIN_HAND));
+            // TODO replace this placeholder
+            String containerI18n = "screen.companionpouch.pouch_companion";
+
+            byte slotCount = CapabilitiesPouchCompanion.getSizeOrDefault(stack.getOrCreateTag());
+            NetworkHooks.openGui(sPlayer, this.getGui(hand, containerI18n), buf -> {
+                buf.writeBoolean(hand == InteractionHand.MAIN_HAND);
+                buf.writeByte(slotCount);
+            });
         }
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
@@ -63,27 +74,33 @@ public class ItemPouchCompanion extends Item implements ICurioItem {
     @Override
     @Implements(value = IForgeItem.class, introducedBy = Item.class)
     public @Nullable ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
-        return new CapabilitiesPouchCompanion(stack, nbt, this.slotCount);
+        return new CapabilitiesPouchCompanion(stack, nbt);
     }
 
-    // note: slotResult.isEmpty() does not need to be checked because of the MixinCompanionItem
-    // changing the CompanionItem.getCompanion logic. The mapped function does not run if there
-    // is no companion equipped because the result is Optional.empty(), rather than the old
-    // behaviour of searching for the specific "head" curio slot and returning an Optional of
-    // whether it was found.
-    //
-    // note: dimRel.getNamespace() is not a bug or typo, it is consistent with behaviour defined
-    // by the vault mod.
+    public static ItemStack getItemFromCuriosHeadSlot(Player player, Predicate<ItemStack> stackMatcher) {
+        return CuriosApi.getCuriosHelper().getCuriosHandler(player).resolve().flatMap((h) -> {
+            return h.getStacksHandler(SlotTypePreset.HEAD.getIdentifier()).flatMap((stackHandler) -> {
+                IDynamicStackHandler stacks = stackHandler.getStacks();
+
+                for(int slot = 0; slot < stacks.getSlots(); ++slot) {
+                    ItemStack stackInSlot = stacks.getStackInSlot(slot);
+                    if (stackMatcher.test(stackInSlot)) {
+                        return Optional.of(stackInSlot);
+                    }
+                }
+
+                return Optional.empty();
+            });
+        }).orElse(ItemStack.EMPTY);
+    }
+
     @Override
     @Implements(ICurioItem.class)
     public boolean canEquip(SlotContext slotContext, ItemStack stack) {
-        return CompanionItem.getCompanion(slotContext.entity())
-            .map(slotResult -> false)
-            .orElseGet(() -> {
-                ResourceLocation dimRel = slotContext.entity().level.dimension().location();
-                String dimMod = dimRel.getNamespace();
-                return !dimMod.equals("the_vault");
-            });
+        // return slotContext.identifier().equals("pouch_companion") &&
+        //     HelperCompanions.getCompanions(slotContext.entity()).isEmpty();
+        LogManager.getLogger().debug("Tried to equip into slot: " + slotContext.identifier());
+        return true;
     }
 
     // note: dimRel.getNamespace() is not a bug or typo, it is consistent with behaviour defined
@@ -99,10 +116,14 @@ public class ItemPouchCompanion extends Item implements ICurioItem {
         return true;
     }
 
-    private SimpleMenuProvider getGui(InteractionHand hand) {
+    private SimpleMenuProvider getGui(InteractionHand hand, String containerI18n) {
         return new SimpleMenuProvider(
-                (id, inv, player) -> new MenuContainerPouchCompanion(id, inv, player.getItemInHand(hand)),
-                new TranslatableComponent(this.containerI18n)
+                (id, inv, player) -> {
+                    ItemStack pouchStack = player.getItemInHand(hand);
+                    byte slotCount = CapabilitiesPouchCompanion.getSizeOrDefault(pouchStack.getOrCreateTag());
+                    return new MenuContainerPouchCompanion(id, inv, pouchStack, slotCount);
+                },
+                new TranslatableComponent(containerI18n)
             );
     }
 }

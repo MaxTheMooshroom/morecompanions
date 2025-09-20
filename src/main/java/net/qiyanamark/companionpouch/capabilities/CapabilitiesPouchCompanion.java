@@ -11,20 +11,24 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.common.capabilities.Capability;
 
+import java.util.Optional;
+
 import javax.annotation.Nullable;
 
 import iskallia.vault.item.CompanionItem;
 import net.qiyanamark.companionpouch.helper.annotations.Extends;
 import net.qiyanamark.companionpouch.helper.annotations.Implements;
+import net.qiyanamark.companionpouch.item.ItemPouchCompanion;
 
 public class CapabilitiesPouchCompanion extends ItemStackHandler implements ICapabilityProvider {
+    private static final String SIZE_KEY = "slots";
     private static final String STORAGE_KEY = "contents";
 
     private final ItemStack stack;
     private final LazyOptional<IItemHandler> lazy;
 
-    public CapabilitiesPouchCompanion(ItemStack stack, @Nullable CompoundTag nbt, int slotCount) {
-        super(slotCount);
+    public CapabilitiesPouchCompanion(ItemStack stack, @Nullable CompoundTag nbt) {
+        super(getSize(nbt).orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT));
 
         this.stack = stack;
         this.lazy = LazyOptional.of(() -> this);
@@ -35,6 +39,18 @@ public class CapabilitiesPouchCompanion extends ItemStackHandler implements ICap
 
         load();
         this.lazy.resolve();
+    }
+
+    public static Optional<Byte> getSize(@Nullable CompoundTag nbt) {
+        if (nbt != null && nbt.contains(SIZE_KEY)) {
+            return Optional.of(nbt.getByte(SIZE_KEY));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public static byte getSizeOrDefault(@Nullable CompoundTag nbt) {
+        return CapabilitiesPouchCompanion.getSize(nbt).orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT);
     }
 
     @Override
