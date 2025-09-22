@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -129,5 +130,11 @@ public final class Geometry2D {
 
     public void unbind() {
         VertexBuffer.unbind();
+    }
+
+    public void perVertex(Consumer<Vertex2D> consumer) {
+        for (int i = 0; i < this.vertexData.length; i++) {
+            consumer.accept(this.vertexData[i]);
+        }
     }
 }

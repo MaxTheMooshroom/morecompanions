@@ -1,7 +1,15 @@
 package net.qiyanamark.companionpouch.item;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import javax.annotation.Nullable;
 
+import iskallia.vault.item.CompanionItem;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -9,28 +17,22 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.SimpleMenuProvider;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.extensions.IForgeItem;
+import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.network.NetworkHooks;
+
+import static iskallia.vault.init.ModItems.VAULT_MOD_GROUP;
+
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotContext;
 import top.theillusivec4.curios.api.SlotTypePreset;
 import top.theillusivec4.curios.api.type.capability.ICurioItem;
-import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
 import top.theillusivec4.curios.api.type.inventory.IDynamicStackHandler;
-import iskallia.vault.item.CompanionItem;
-import iskallia.vault.integration.IntegrationCurios;
-
-import static iskallia.vault.init.ModItems.VAULT_MOD_GROUP;
-
-import java.util.Optional;
-import java.util.function.Predicate;
-import org.apache.logging.log4j.LogManager;
 
 import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.capabilities.CapabilitiesPouchCompanion;
@@ -50,6 +52,18 @@ public class ItemPouchCompanion extends Item implements ICurioItem {
 
     public ItemPouchCompanion() {
         this(ModCompanionPouch.rel(REL_STRING));
+    }
+
+    public static List<ItemStack> getContents(ItemStack stack) {
+        if (!(stack.getItem() instanceof ItemPouchCompanion)) {
+            return Collections.emptyList();
+        }
+
+        return stack.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY).resolve()
+            .map(handler -> IntStream.range(0, handler.getSlots())
+                .mapToObj(i -> handler.getStackInSlot(i))
+                .collect(Collectors.toList()))
+            .orElseGet(Collections::emptyList);
     }
 
     @Override
@@ -97,10 +111,8 @@ public class ItemPouchCompanion extends Item implements ICurioItem {
     @Override
     @Implements(ICurioItem.class)
     public boolean canEquip(SlotContext slotContext, ItemStack stack) {
-        // return slotContext.identifier().equals("pouch_companion") &&
-        //     HelperCompanions.getCompanions(slotContext.entity()).isEmpty();
-        LogManager.getLogger().debug("Tried to equip into slot: " + slotContext.identifier());
-        return true;
+        return slotContext.identifier().equals("pouch_companion") &&
+            HelperCompanions.getCompanions(slotContext.entity()).isEmpty();
     }
 
     // note: dimRel.getNamespace() is not a bug or typo, it is consistent with behaviour defined

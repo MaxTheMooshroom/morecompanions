@@ -68,5 +68,9 @@ public class Structs {
         public Vertex2D(Vec2 pos, Vec2i uv) { this(pos, Optional.empty(), Optional.of(uv)); }
 
         public Vertex2D(Vec2 pos) { this(pos, Optional.empty(), Optional.empty()); }
+
+        public Vertex2D copy() {
+            return new Vertex2D(this.pos.copy(), this.color.map(c -> c.copy()), this.uv.map(uv -> uv.copy()));
+        }
     }
 }
