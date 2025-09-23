@@ -1,4 +1,4 @@
-package net.qiyanamark.companionpouch.helper.shapes;
+package net.qiyanamark.companionpouch.util;
 
 import java.util.Optional;
 
@@ -26,6 +26,8 @@ public class Structs {
     }
 
     public static record Vec2i(int x, int y) {
+        private Vec2i() { this(0, 0); }
+        
         public Vec2i copy() {
             return new Vec2i(this.x, this.y);
         }

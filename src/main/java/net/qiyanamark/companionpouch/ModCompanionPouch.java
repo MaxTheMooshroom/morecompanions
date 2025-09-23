@@ -1,19 +1,31 @@
 package net.qiyanamark.companionpouch;
 
+import org.lwjgl.glfw.GLFW;
+
+import com.mojang.blaze3d.platform.InputConstants;
+
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.client.event.TextureStitchEvent;
+import net.minecraft.server.MinecraftServer;
+
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.InterModComms;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
-import top.theillusivec4.curios.api.SlotTypeMessage;
-
 import net.qiyanamark.companionpouch.catalog.CatalogMenu;
-import net.qiyanamark.companionpouch.screen.ScreenPouchCompanion;
+import net.qiyanamark.companionpouch.catalog.CatalogNetwork;
+import net.qiyanamark.companionpouch.network.PacketRequestOpenInterfacePouch;
+import net.qiyanamark.companionpouch.screen.ScreenInterfacePouchCompanion;
+import net.qiyanamark.companionpouch.screen.ScreenInventoryPouchCompanion;
+
+import static iskallia.vault.init.ModKeybinds.useCompanionTemporal;
 
 @Mod(ModCompanionPouch.MOD_ID)
 public class ModCompanionPouch {
@@ -27,27 +39,65 @@ public class ModCompanionPouch {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         modBus.addListener(ModCompanionPouch::clientSetup);
-        modBus.addListener(ModCompanionPouch::registerPouchSlot);
-        modBus.addListener(ModCompanionPouch::registerTextures);
+
+        CatalogNetwork.register();
+    }
+
+    public static MinecraftServer getServer() {
+        return Minecraft.getInstance().level.getServer();
+    }
+
+    public static LocalPlayer getClientPlayer() {
+        return Minecraft.getInstance().player;
     }
 
     private static void clientSetup(final FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
-            MenuScreens.register(CatalogMenu.COMPANION_POUCH, ScreenPouchCompanion::new);
+            MenuScreens.register(CatalogMenu.COMPANION_POUCH_INVENTORY, ScreenInventoryPouchCompanion::new);
+            MenuScreens.register(CatalogMenu.COMPANION_POUCH_INTERFACE, ScreenInterfacePouchCompanion::new);
         });
     }
 
-    public static void registerTextures(TextureStitchEvent.Pre event) {
-        event.addSprite(rel("slot/pouch_companion"));
-    }
+    @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+    public static class HandlerInput {
+        private static boolean shifting = false;
 
-    public static void registerPouchSlot(InterModEnqueueEvent event) {
-        InterModComms.sendTo("curios", SlotTypeMessage.REGISTER_TYPE, () -> {
-            return new SlotTypeMessage.Builder("pouch_companion")
-                .size(1)
-                .priority(45)
-                .icon(rel("slot/pouch_companion"))
-                .build();
-        });
+        @SubscribeEvent
+        public static void onKey(InputEvent.KeyInputEvent event) {
+            InputConstants.Key key = InputConstants.getKey(event.getKey(), event.getScanCode());
+
+            switch (event.getAction()) {
+            case GLFW.GLFW_PRESS:
+                HandlerInput.onKeyPress(key);
+                return;
+            case GLFW.GLFW_RELEASE:
+                HandlerInput.onKeyRelease(key);
+                return;
+            case GLFW.GLFW_REPEAT:
+                return;
+            }
+        }
+
+        private static void onKeyPress(InputConstants.Key key) {
+            if (HandlerInput.shifting && useCompanionTemporal.isActiveAndMatches(key)) {
+                PacketRequestOpenInterfacePouch.sendToServer();
+                getClientPlayer().sendMessage(new TextComponent("open requested"), getClientPlayer().getUUID());
+                return;
+            }
+
+            InputConstants.Key shiftKey = Minecraft.getInstance().options.keyShift.getKey();
+            if (key.getValue() == shiftKey.getValue() && Minecraft.getInstance().screen == null) {
+                HandlerInput.shifting = true;
+                getClientPlayer().sendMessage(new TextComponent("shift pressed"), getClientPlayer().getUUID());
+            }
+        }
+
+        private static void onKeyRelease(InputConstants.Key key) {
+            InputConstants.Key shiftKey = Minecraft.getInstance().options.keyShift.getKey();
+            if (key.getValue() == shiftKey.getValue()) {
+                HandlerInput.shifting = false;
+                getClientPlayer().sendMessage(new TextComponent("shift released"), getClientPlayer().getUUID());
+            }
+        }
     }
 }

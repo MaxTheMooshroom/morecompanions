@@ -2,16 +2,12 @@ package net.qiyanamark.companionpouch.item;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import javax.annotation.Nullable;
 
-import iskallia.vault.item.CompanionItem;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -28,18 +24,14 @@ import net.minecraftforge.network.NetworkHooks;
 
 import static iskallia.vault.init.ModItems.VAULT_MOD_GROUP;
 
-import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotContext;
-import top.theillusivec4.curios.api.SlotTypePreset;
 import top.theillusivec4.curios.api.type.capability.ICurioItem;
-import top.theillusivec4.curios.api.type.inventory.IDynamicStackHandler;
 
 import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.capabilities.CapabilitiesPouchCompanion;
-import net.qiyanamark.companionpouch.helper.HelperCompanions;
-import net.qiyanamark.companionpouch.helper.annotations.Extends;
-import net.qiyanamark.companionpouch.helper.annotations.Implements;
-import net.qiyanamark.companionpouch.menu.container.MenuContainerPouchCompanion;
+import net.qiyanamark.companionpouch.menu.container.MenuInventoryPouchCompanion;
+import net.qiyanamark.companionpouch.util.annotations.Extends;
+import net.qiyanamark.companionpouch.util.annotations.Implements;
 
 public class ItemPouchCompanion extends Item implements ICurioItem {
     public static final String REL_STRING = "pouch_companion";
@@ -73,10 +65,11 @@ public class ItemPouchCompanion extends Item implements ICurioItem {
 
         if (player instanceof ServerPlayer sPlayer) {
             // TODO replace this placeholder
-            String containerI18n = "screen.companionpouch.pouch_companion";
+            String containerI18n = "screen.companionpouch.inventory_pouch_companion";
 
             byte slotCount = CapabilitiesPouchCompanion.getSizeOrDefault(stack.getOrCreateTag());
-            NetworkHooks.openGui(sPlayer, this.getGui(hand, containerI18n), buf -> {
+            SimpleMenuProvider provider = MenuInventoryPouchCompanion.getProvider(hand, containerI18n);
+            NetworkHooks.openGui(sPlayer, provider, buf -> {
                 buf.writeBoolean(hand == InteractionHand.MAIN_HAND);
                 buf.writeByte(slotCount);
             });
@@ -91,28 +84,12 @@ public class ItemPouchCompanion extends Item implements ICurioItem {
         return new CapabilitiesPouchCompanion(stack, nbt);
     }
 
-    public static ItemStack getItemFromCuriosHeadSlot(Player player, Predicate<ItemStack> stackMatcher) {
-        return CuriosApi.getCuriosHelper().getCuriosHandler(player).resolve().flatMap((h) -> {
-            return h.getStacksHandler(SlotTypePreset.HEAD.getIdentifier()).flatMap((stackHandler) -> {
-                IDynamicStackHandler stacks = stackHandler.getStacks();
-
-                for(int slot = 0; slot < stacks.getSlots(); ++slot) {
-                    ItemStack stackInSlot = stacks.getStackInSlot(slot);
-                    if (stackMatcher.test(stackInSlot)) {
-                        return Optional.of(stackInSlot);
-                    }
-                }
-
-                return Optional.empty();
-            });
-        }).orElse(ItemStack.EMPTY);
-    }
-
+    // note: dimRel.getNamespace() is not a bug or typo, it is consistent with behaviour defined
+    // by the vault mod.
     @Override
     @Implements(ICurioItem.class)
     public boolean canEquip(SlotContext slotContext, ItemStack stack) {
-        return slotContext.identifier().equals("pouch_companion") &&
-            HelperCompanions.getCompanions(slotContext.entity()).isEmpty();
+        return !slotContext.entity().level.dimension().location().getNamespace().equals("the_vault");
     }
 
     // note: dimRel.getNamespace() is not a bug or typo, it is consistent with behaviour defined
@@ -126,16 +103,5 @@ public class ItemPouchCompanion extends Item implements ICurioItem {
         }
 
         return true;
-    }
-
-    private SimpleMenuProvider getGui(InteractionHand hand, String containerI18n) {
-        return new SimpleMenuProvider(
-                (id, inv, player) -> {
-                    ItemStack pouchStack = player.getItemInHand(hand);
-                    byte slotCount = CapabilitiesPouchCompanion.getSizeOrDefault(pouchStack.getOrCreateTag());
-                    return new MenuContainerPouchCompanion(id, inv, pouchStack, slotCount);
-                },
-                new TranslatableComponent(containerI18n)
-            );
     }
 }

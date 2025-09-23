@@ -4,8 +4,6 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -26,6 +24,7 @@ import iskallia.vault.skill.base.Skill;
 import iskallia.vault.skill.expertise.type.CompanionCooldownExpertise;
 import iskallia.vault.skill.tree.ExpertiseTree;
 import iskallia.vault.world.data.PlayerExpertisesData;
+
 import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.helper.HelperCompanions;
 
@@ -40,7 +39,6 @@ public class MixinVaultPlayerEvents {
         ServerPlayer player = event.getPlayer();
         Vault vault = event.getVault();
         HelperCompanions.getCompanions(player).forEach(stack -> {
-        // CompanionItem.getCompanion(player).ifPresent((stack) -> {
             String companionName = CompanionItem.getPetName(stack);
             boolean onCd = CompanionItem.isOnCooldown(stack);
             CompanionItem.setActive(stack, !onCd);
@@ -78,28 +76,30 @@ public class MixinVaultPlayerEvents {
         ServerPlayer player = event.getPlayer();
         Vault vault = event.getVault();
         if (!VaultUtils.isSpecialVault(vault) && player != null) {
-            HelperCompanions.getCompanions(player).forEach(stack -> {
-                if (CompanionItem.getCompanionHearts(stack) == 0) {
-                    return;
-                }
-                
-                CompanionItem.startCompanionCooldown(stack);
-                ExpertiseTree expertises = PlayerExpertisesData.get(player.getLevel()).getExpertises(player);
-                
-                float reduction = expertises.getAll(CompanionCooldownExpertise.class, Skill::isUnlocked).stream()
-                    .map(CompanionCooldownExpertise::getCooldownReduction)
-                    .reduce(0f, Float::sum);
-
-                if (reduction > 0.0F) {
-                    int current = CompanionItem.getCurrentCooldown(stack);
-                    int reduceBy = Mth.floor((float)current * reduction);
-                    if (reduceBy > 0) {
-                        CompanionItem.reduceCooldown(stack, reduceBy);
+            HelperCompanions.getCompanions(player).stream()
+                .filter(stack -> CompanionItem.getCompanionHearts(stack) > 0)
+                .forEach(stack -> {
+                    if (CompanionItem.getCompanionHearts(stack) == 0) {
+                        return;
                     }
-                }
+                    
+                    CompanionItem.startCompanionCooldown(stack);
+                    ExpertiseTree expertises = PlayerExpertisesData.get(player.getLevel()).getExpertises(player);
+                    
+                    float reduction = expertises.getAll(CompanionCooldownExpertise.class, Skill::isUnlocked).stream()
+                        .map(CompanionCooldownExpertise::getCooldownReduction)
+                        .reduce(0f, Float::sum);
 
-                CompanionItem.incrementVaultRuns(stack);
-            });
+                    if (reduction > 0.0F) {
+                        int current = CompanionItem.getCurrentCooldown(stack);
+                        int reduceBy = Mth.floor((float)current * reduction);
+                        if (reduceBy > 0) {
+                            CompanionItem.reduceCooldown(stack, reduceBy);
+                        }
+                    }
+
+                    CompanionItem.incrementVaultRuns(stack);
+                });
         }
         ci.cancel();
     }

@@ -16,26 +16,25 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 import iskallia.vault.item.CompanionItem;
-import net.qiyanamark.companionpouch.helper.annotations.Extends;
-import net.qiyanamark.companionpouch.helper.annotations.Implements;
 import net.qiyanamark.companionpouch.item.ItemPouchCompanion;
+import net.qiyanamark.companionpouch.util.annotations.Extends;
+import net.qiyanamark.companionpouch.util.annotations.Implements;
 
-public class CapabilitiesPouchCompanion extends ItemStackHandler implements ICapabilityProvider {
-    private static final String SIZE_KEY = "slots";
+public class CapabilitiesPouchCompanion extends ItemStackHandler implements ICapabilityProvider, ITemporalIndex {
+    private static final String SIZE_KEY = "size";
+    private static final String ACTIVATE_KEY = "activate";
     private static final String STORAGE_KEY = "contents";
 
     private final ItemStack stack;
-    private final LazyOptional<IItemHandler> lazy;
+    private final LazyOptional<?> lazy = LazyOptional.of(() -> this);
+
+    private int activationIndex = 0;
 
     public CapabilitiesPouchCompanion(ItemStack stack, @Nullable CompoundTag nbt) {
-        super(getSize(nbt).orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT));
+        super(CapabilitiesPouchCompanion.getSizeOrDefault(nbt));
 
         this.stack = stack;
-        this.lazy = LazyOptional.of(() -> this);
-
-        if (nbt != null && nbt.contains(STORAGE_KEY)) {
-            this.stack.getOrCreateTag().put(STORAGE_KEY, nbt.get(STORAGE_KEY));
-        }
+        initFromNbt(nbt);
 
         load();
         this.lazy.resolve();
@@ -53,10 +52,17 @@ public class CapabilitiesPouchCompanion extends ItemStackHandler implements ICap
         return CapabilitiesPouchCompanion.getSize(nbt).orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     @Implements(ICapabilityProvider.class)
     public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
-        return CapabilityItemHandler.ITEM_HANDLER_CAPABILITY.orEmpty(cap, this.lazy);
+        if (cap == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
+            return (LazyOptional<T>) this.lazy;
+        } else if (cap == CapabilityTemporalIndex.TEMPORAL_INDEX_CAPABILITY) {
+            return (LazyOptional<T>) this.lazy;
+        } else {
+            return LazyOptional.empty();
+        }
     }
 
     @Override
@@ -71,15 +77,46 @@ public class CapabilitiesPouchCompanion extends ItemStackHandler implements ICap
         this.save();
     }
 
+    private void initFromNbt(@Nullable CompoundTag nbt) {
+        if (nbt == null) {
+            return;
+        }
+
+        CompoundTag stackData = this.stack.getOrCreateTag();
+
+        if (nbt.contains(STORAGE_KEY)) {
+            stackData.put(STORAGE_KEY, nbt.get(STORAGE_KEY));
+        }
+
+        byte activateSlotIndex = nbt.contains(ACTIVATE_KEY) ? nbt.getByte(ACTIVATE_KEY) : (byte) 0;
+        stackData.putByte(ACTIVATE_KEY, activateSlotIndex);
+    }
+
     private void load() {
         CompoundTag tag = this.stack.getOrCreateTag();
         if (tag.contains(STORAGE_KEY)) {
             this.deserializeNBT(tag.getCompound(STORAGE_KEY));
         }
+        if (tag.contains(ACTIVATE_KEY)) {
+            this.activationIndex = tag.getByte(ACTIVATE_KEY);
+        }
     }
 
     private void save() {
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = this.stack.getOrCreateTag();
         tag.put(STORAGE_KEY, this.serializeNBT());
+        tag.putByte(ACTIVATE_KEY, (byte) this.activationIndex);
+    }
+
+    @Override
+    @Implements(ITemporalIndex.class)
+    public int getIndex() {
+        return this.activationIndex;
+    }
+
+    @Override
+    public void setIndex(int index) {
+        this.activationIndex = index;
+        this.save();
     }
 }

@@ -1,4 +1,4 @@
-package net.qiyanamark.companionpouch.helper.annotations;
+package net.qiyanamark.companionpouch.util.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,6 +7,7 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.METHOD)
-public @interface Extends {
+public @interface Implements {
     Class<?> value();
+    Class<?>[] introducedBy() default {};
 }

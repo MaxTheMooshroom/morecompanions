@@ -11,16 +11,16 @@ import net.qiyanamark.companionpouch.item.ItemPouchCompanion;
 
 @Mod.EventBusSubscriber(modid = ModCompanionPouch.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class CatalogItem {
-    public static final ItemPouchCompanion POUCH_BASIC;
+    public static final ItemPouchCompanion COMPANION_POUCH;
 
     @SubscribeEvent
     public static void registerItems(RegistryEvent.Register<Item> event) {
         IForgeRegistry<Item> registry = event.getRegistry();
 
-        registry.register(POUCH_BASIC);
+        registry.register(COMPANION_POUCH);
     }
 
     static {
-        POUCH_BASIC = new ItemPouchCompanion();
+        COMPANION_POUCH = new ItemPouchCompanion();
     }
 }

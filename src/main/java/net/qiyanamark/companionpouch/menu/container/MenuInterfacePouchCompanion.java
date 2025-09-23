@@ -1,7 +1,12 @@
 package net.qiyanamark.companionpouch.menu.container;
 
-import iskallia.vault.item.CompanionItem;
+import java.util.Optional;
+import java.util.UUID;
+
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -11,22 +16,23 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
+
+import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.capabilities.CapabilitiesPouchCompanion;
 import net.qiyanamark.companionpouch.catalog.CatalogMenu;
-import net.qiyanamark.companionpouch.helper.HelperInventory;
-import net.qiyanamark.companionpouch.helper.annotations.Extends;
-import net.qiyanamark.companionpouch.item.ItemPouchCompanion;
+import net.qiyanamark.companionpouch.helper.HelperCompanions;
+import net.qiyanamark.companionpouch.util.annotations.Extends;
 
-public class MenuContainerPouchCompanion extends AbstractContainerMenu {
-    public static final String MENU_ID = "container_pouch_companion";
+public class MenuInterfacePouchCompanion extends AbstractContainerMenu {
+    public static final String MENU_ID = "container_interface_pouch_companion";
 
     private final ItemStack pouchStack;
     private final IItemHandler handler;
     private final int slotCount;
 
     // Server-side ctor
-    public MenuContainerPouchCompanion(int id, Inventory inv, ItemStack pouchStack, int slotCount) {
-        super(CatalogMenu.COMPANION_POUCH, id);
+    public MenuInterfacePouchCompanion(int id, Inventory inv, ItemStack pouchStack, int slotCount) {
+        super(CatalogMenu.COMPANION_POUCH_INVENTORY, id);
         // this.slotCount = CapabilitiesPouchCompanion.getSize(pouchStack.getOrCreateTag()).orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT);
         this.slotCount = slotCount;
         this.pouchStack = pouchStack;
@@ -38,11 +44,28 @@ public class MenuContainerPouchCompanion extends AbstractContainerMenu {
     }
 
     // Client-side ctor from network
-    public static MenuContainerPouchCompanion fromNetwork(int id, Inventory inv, FriendlyByteBuf buf) {
-        boolean main = buf.readBoolean();
-        ItemStack pouchStack = main ? inv.player.getMainHandItem() : inv.player.getOffhandItem();
+    public static MenuInterfacePouchCompanion fromNetwork(int id, Inventory inv, FriendlyByteBuf buf) {
         int slotCount = buf.readByte();
-        return new MenuContainerPouchCompanion(id, inv, pouchStack, slotCount);
+        
+        UUID uuid = buf.readUUID();
+        ServerPlayer sPlayer = ModCompanionPouch.getServer().getPlayerList().getPlayer(uuid);
+        Optional<ItemStack> pouchStack = HelperCompanions.getCompanionPouch(sPlayer);
+
+        if (pouchStack.isEmpty()) {
+            return null;
+        }
+
+        return new MenuInterfacePouchCompanion(id, inv, pouchStack.get(), slotCount);
+    }
+
+    public static SimpleMenuProvider getProvider(ItemStack pouchStack, String containerI18n) {
+        return new SimpleMenuProvider(
+                (id, inv, player) -> {
+                    byte slotCount = CapabilitiesPouchCompanion.getSizeOrDefault(pouchStack.getOrCreateTag());
+                    return new MenuInterfacePouchCompanion(id, inv, pouchStack, slotCount);
+                },
+                new TranslatableComponent(containerI18n)
+            );
     }
 
     @Override
@@ -84,14 +107,22 @@ public class MenuContainerPouchCompanion extends AbstractContainerMenu {
         return result;
     }
 
+    public int getSlotCount() {
+        return this.slotCount;
+    }
+
+    public ItemStack getPouchStack() {
+        return this.pouchStack;
+    }
+
     private void defineLayout(Inventory inv) {
-        this.addSlot(new SlotContainerPouch(handler, 0, 62, 20));
-        this.addSlot(new SlotContainerPouch(handler, 1, 80, 20));
-        this.addSlot(new SlotContainerPouch(handler, 2, 98, 20));
-
-        // TODO: Add slots procedurally
-
-        HelperInventory.playerInventory(inv, 0).stream().forEach(slot -> this.addSlot(slot));
+        for (int i = 0; i < this.slotCount; i++) {
+            this.addSlot(new SlotContainerPouch(
+                this.handler, i,
+                CatalogMenu.MENU_INTERFACE_SLOT_PADDING_LEFT_TOP.x() + (CatalogMenu.MENU_INTERFACE_SLOT_SPACING * i),
+                CatalogMenu.MENU_INTERFACE_SLOT_PADDING_LEFT_TOP.y()
+            ));
+        }
     }
 
     private class SlotContainerPouch extends SlotItemHandler {
@@ -101,7 +132,12 @@ public class MenuContainerPouchCompanion extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            return stack.getItem() instanceof CompanionItem;
+            return false;
+        }
+
+        @Override
+        public boolean mayPickup(Player playerIn) {
+            return false;
         }
     }
 }
