@@ -6,6 +6,12 @@
 *.ipr
 *.iws
 
+# Windows temp files
+*~
+
+# Krita autosave files
+*.kra-autosave.kra
+
 # Nix Package Manager
 .direnv/
 

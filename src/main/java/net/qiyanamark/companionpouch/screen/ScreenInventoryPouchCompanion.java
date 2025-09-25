@@ -15,28 +15,28 @@ import net.qiyanamark.companionpouch.menu.container.MenuInventoryPouchCompanion;
 import net.qiyanamark.companionpouch.util.Structs.Vec2i;
 import net.qiyanamark.companionpouch.util.annotations.Extends;
 
-import static net.qiyanamark.companionpouch.catalog.CatalogMenu.SCREEN_INVENTORY_CHROME;
-import static net.qiyanamark.companionpouch.catalog.CatalogMenu.MENU_SLOT;
+import net.qiyanamark.companionpouch.catalog.CatalogMenu;
 
 @OnlyIn(Dist.CLIENT)
 public class ScreenInventoryPouchCompanion extends AbstractContainerScreen<MenuInventoryPouchCompanion> {
     public ScreenInventoryPouchCompanion(MenuInventoryPouchCompanion menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
-        this.imageWidth = SCREEN_INVENTORY_CHROME.getSize().x();
-        this.imageHeight = SCREEN_INVENTORY_CHROME.getSize().y();
+        this.imageWidth = CatalogMenu.SCREEN_INVENTORY_CHROME.getSize().x();
+        this.imageHeight = CatalogMenu.SCREEN_INVENTORY_CHROME.getSize().y();
     }
 
     public static Vec2i getSize() {
-        return SCREEN_INVENTORY_CHROME.getSize().copy();
+        return CatalogMenu.SCREEN_INVENTORY_CHROME.getSize().copy();
     }
 
     protected void renderBgChrome(PoseStack poseStack) {
-        SCREEN_INVENTORY_CHROME.blit(poseStack, this.leftPos, this.topPos);
+        CatalogMenu.SCREEN_INVENTORY_CHROME.bind();
+        CatalogMenu.SCREEN_INVENTORY_CHROME.blit(poseStack, this.leftPos, this.topPos);
     }
 
     protected void renderBgSlots(PoseStack poseStack) {
-        MENU_SLOT.bindFor(poseStack, () -> {
-            this.menu.slots.forEach(slot -> MENU_SLOT.blit(poseStack, this.leftPos + slot.x, this.topPos + slot.y));
+        CatalogMenu.MENU_SLOT.bindFor(poseStack, ctx -> {
+            this.menu.slots.forEach(slot -> CatalogMenu.MENU_SLOT.blit(ctx, this.leftPos + slot.x, this.topPos + slot.y));
         });
     }
 

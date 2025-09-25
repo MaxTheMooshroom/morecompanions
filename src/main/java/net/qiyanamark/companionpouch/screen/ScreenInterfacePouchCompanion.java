@@ -87,53 +87,56 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
     }
 
     protected void renderBgChrome(PoseStack poseStack) {
+        CatalogMenu.SCREEN_INTERFACE_CHROME.bind();
         CatalogMenu.SCREEN_INTERFACE_CHROME.blit(poseStack, this.leftPos, this.topPos);
     }
 
     protected void renderBgSlots(PoseStack poseStack, List<Pair<Integer, Vec2i>> slotPositions) {
         CatalogMenu.MENU_SLOT.bindFor(
             poseStack,
-            () -> slotPositions.stream()
-                .map(pair -> pair.getSecond())
-                .forEach(pos -> {
-                    CatalogMenu.MENU_SLOT.blit(poseStack, this.leftPos + pos.x(), this.topPos + pos.y());
-                })
+            ctx -> {
+                slotPositions.stream()
+                    .map(pair -> pair.getSecond())
+                    .forEach(pos -> {
+                        CatalogMenu.MENU_SLOT.blit(ctx, this.leftPos + pos.x(), this.topPos + pos.y());
+                    });
+            }
         );
     }
 
     protected void renderButtons(PoseStack poseStack, List<Pair<Integer, Vec2i>> slotPositions) {
-        CatalogMenu.ACTIVATE_READY.bindFor(poseStack, () -> {
+        CatalogMenu.ACTIVATE_READY.bindFor(poseStack, ctx -> {
             slotPositions.stream()
                 .filter(pair -> this.activatorsEnabled[pair.getFirst()])
                 .map(pair -> pair.getSecond())
                 .forEach(pos -> {
                     CatalogMenu.ACTIVATE_READY.blit(
-                        poseStack,
+                        ctx,
                         this.leftPos + pos.x() + CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.x(),
                         this.topPos + pos.y() + CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.y()
                     );
                 });
         });
 
-        CatalogMenu.ACTIVATE_RESTING.bindFor(poseStack, () -> {
+        CatalogMenu.ACTIVATE_RESTING.bindFor(poseStack, ctx -> {
             slotPositions.stream()
                 .filter(pair -> !this.activatorsEnabled[pair.getFirst()])
                 .map(pair -> pair.getSecond())
                 .forEach(pos -> {
                     CatalogMenu.ACTIVATE_RESTING.blit(
-                        poseStack,
+                        ctx,
                         this.leftPos + pos.x() + CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.x(),
                         this.topPos + pos.y() + CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.y()
                     );
                 });
         });
 
-        CatalogMenu.TOGGLE_OFF.bindFor(poseStack, () -> slotPositions.stream()
+        CatalogMenu.TOGGLE_OFF.bindFor(poseStack, ctx -> slotPositions.stream()
             .filter(pair -> pair.getFirst() != this.toggleIndex)
             .map(pair -> pair.getSecond())
             .forEach(pos -> {
                 CatalogMenu.TOGGLE_OFF.blit(
-                    poseStack,
+                    ctx,
                     this.leftPos + pos.x() + CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.x(),
                     this.topPos + pos.y() + CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.y()
                 );
