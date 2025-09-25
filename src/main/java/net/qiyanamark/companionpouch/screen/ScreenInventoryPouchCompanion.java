@@ -29,12 +29,14 @@ public class ScreenInventoryPouchCompanion extends AbstractContainerScreen<MenuI
         return CatalogMenu.SCREEN_INVENTORY_CHROME.getSize().copy();
     }
 
-    protected void renderBgChrome(PoseStack poseStack) {
+    protected void renderChrome(PoseStack poseStack) {
+        CatalogMenu.SCREEN_INVENTORY_CHROME.upload();
         CatalogMenu.SCREEN_INVENTORY_CHROME.bind();
         CatalogMenu.SCREEN_INVENTORY_CHROME.blit(poseStack, this.leftPos, this.topPos);
     }
 
-    protected void renderBgSlots(PoseStack poseStack) {
+    protected void renderSlots(PoseStack poseStack) {
+        CatalogMenu.MENU_SLOT.upload();
         CatalogMenu.MENU_SLOT.bindFor(poseStack, ctx -> {
             this.menu.slots.forEach(slot -> CatalogMenu.MENU_SLOT.blit(ctx, this.leftPos + slot.x, this.topPos + slot.y));
         });
@@ -44,8 +46,8 @@ public class ScreenInventoryPouchCompanion extends AbstractContainerScreen<MenuI
     @Extends(AbstractContainerScreen.class)
     protected void renderBg(PoseStack poseStack, float pPartialTick, int pMouseX, int pMouseY) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        this.renderBgChrome(poseStack);
-        this.renderBgSlots(poseStack);
+        this.renderChrome(poseStack);
+        this.renderSlots(poseStack);
     }
 
     @Override

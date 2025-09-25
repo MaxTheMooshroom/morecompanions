@@ -1,11 +1,9 @@
 package net.qiyanamark.companionpouch.screen;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.datafixers.util.Pair;
 
@@ -15,7 +13,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.player.Inventory;
@@ -33,7 +30,9 @@ import net.qiyanamark.companionpouch.util.annotations.Extends;
 public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuInterfacePouchCompanion> {
     private final int slotCount;
     private final int toggleIndex;
+
     private boolean[] activatorsEnabled;
+    List<Pair<Integer, Vec2i>> slotPositions = new ArrayList<>();
 
     public ScreenInterfacePouchCompanion(MenuInterfacePouchCompanion menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
@@ -75,6 +74,9 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
                 toggleX, toggleY,
                 new TextComponent("test1")
             ));
+
+            Pair<Integer, Vec2i> position = new Pair<>(i, new Vec2i(slot.x, slot.y));
+            this.slotPositions.add(position);
         }
     }
 
@@ -86,16 +88,16 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
         this.renderTooltip(poseStack, mouseX, mouseY);
     }
 
-    protected void renderBgChrome(PoseStack poseStack) {
+    protected void renderChrome(PoseStack poseStack) {
         CatalogMenu.SCREEN_INTERFACE_CHROME.bind();
         CatalogMenu.SCREEN_INTERFACE_CHROME.blit(poseStack, this.leftPos, this.topPos);
     }
 
-    protected void renderBgSlots(PoseStack poseStack, List<Pair<Integer, Vec2i>> slotPositions) {
+    protected void renderSlots(PoseStack poseStack) {
         CatalogMenu.MENU_SLOT.bindFor(
             poseStack,
             ctx -> {
-                slotPositions.stream()
+                this.slotPositions.stream()
                     .map(pair -> pair.getSecond())
                     .forEach(pos -> {
                         CatalogMenu.MENU_SLOT.blit(ctx, this.leftPos + pos.x(), this.topPos + pos.y());
@@ -104,9 +106,9 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
         );
     }
 
-    protected void renderButtons(PoseStack poseStack, List<Pair<Integer, Vec2i>> slotPositions) {
+    protected void renderButtons(PoseStack poseStack) {
         CatalogMenu.ACTIVATE_READY.bindFor(poseStack, ctx -> {
-            slotPositions.stream()
+            this.slotPositions.stream()
                 .filter(pair -> this.activatorsEnabled[pair.getFirst()])
                 .map(pair -> pair.getSecond())
                 .forEach(pos -> {
@@ -119,7 +121,7 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
         });
 
         CatalogMenu.ACTIVATE_RESTING.bindFor(poseStack, ctx -> {
-            slotPositions.stream()
+            this.slotPositions.stream()
                 .filter(pair -> !this.activatorsEnabled[pair.getFirst()])
                 .map(pair -> pair.getSecond())
                 .forEach(pos -> {
@@ -131,19 +133,20 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
                 });
         });
 
-        CatalogMenu.TOGGLE_OFF.bindFor(poseStack, ctx -> slotPositions.stream()
-            .filter(pair -> pair.getFirst() != this.toggleIndex)
-            .map(pair -> pair.getSecond())
-            .forEach(pos -> {
-                CatalogMenu.TOGGLE_OFF.blit(
-                    ctx,
-                    this.leftPos + pos.x() + CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.x(),
-                    this.topPos + pos.y() + CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.y()
-                );
-            })
-        );
+        CatalogMenu.TOGGLE_OFF.bindFor(poseStack, ctx -> {
+            this.slotPositions.stream()
+                .filter(pair -> pair.getFirst() != this.toggleIndex)
+                .map(pair -> pair.getSecond())
+                .forEach(pos -> {
+                    CatalogMenu.TOGGLE_OFF.blit(
+                        ctx,
+                        this.leftPos + pos.x() + CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.x(),
+                        this.topPos + pos.y() + CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.y()
+                    );
+                });
+        });
 
-        Vec2i pos = slotPositions.stream().filter(p -> p.getFirst() == this.toggleIndex).map(pair -> pair.getSecond()).findFirst().get();
+        Vec2i pos = this.slotPositions.stream().filter(p -> p.getFirst() == this.toggleIndex).map(pair -> pair.getSecond()).findFirst().get();
         CatalogMenu.TOGGLE_ON.bind();
         CatalogMenu.TOGGLE_ON.blit(
             poseStack,
@@ -155,17 +158,9 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
     @Override
     @Extends(AbstractContainerScreen.class)
     protected void renderBg(PoseStack poseStack, float pPartialTick, int pMouseX, int pMouseY) {
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        List<Pair<Integer, Vec2i>> slotPositions = IntStream.range(0, this.slotCount)
-            .mapToObj(i -> {
-                Slot slot = this.menu.slots.get(i);
-                return new Pair<Integer, Vec2i>(i, new Vec2i(slot.x, slot.y));
-            })
-            .collect(Collectors.toList());
-
-        this.renderBgChrome(poseStack);
-        this.renderBgSlots(poseStack, slotPositions);
-        this.renderButtons(poseStack, slotPositions);
+        this.renderChrome(poseStack);
+        this.renderSlots(poseStack);
+        this.renderButtons(poseStack);
     }
 
     private static abstract class IndexedButton extends Button {
