@@ -118,6 +118,16 @@ public class CompositeTexture {
 
         public void blit(RenderContext ctx, int x, int y) {
             CompositeTexture.executeOnRenderThread(() -> {
+                if (this.parent.side == HardwareSide.CPU) {
+                    this.parent._upload();
+                    this.parent._bind();
+                }
+
+                if (this.vbo.isEmpty()) {
+                    this._upload();
+                    this._bind();
+                }
+
                 this._blit(ctx, x, y);
             });
         }
@@ -180,11 +190,6 @@ public class CompositeTexture {
 
         private void _blit(RenderContext ctx, int x, int y) {
             RenderSystem.assertOnRenderThread();
-
-            if (this.parent.side == HardwareSide.CPU) {
-                this.parent._upload();
-                this.parent._bind();
-            }
 
             VertexBuffer vbo = this.vbo.orElseGet(() -> {
                 this._bind();
