@@ -7,10 +7,9 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -21,11 +20,15 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 import net.qiyanamark.companionpouch.catalog.CatalogMenu;
 import net.qiyanamark.companionpouch.catalog.CatalogNetwork;
+import net.qiyanamark.companionpouch.helper.HelperCompanions;
+import net.qiyanamark.companionpouch.network.PacketRequestActivationTemporal;
 import net.qiyanamark.companionpouch.network.PacketRequestOpenInterfacePouch;
 import net.qiyanamark.companionpouch.screen.ScreenInterfacePouchCompanion;
 import net.qiyanamark.companionpouch.screen.ScreenInventoryPouchCompanion;
 
 import static iskallia.vault.init.ModKeybinds.useCompanionTemporal;
+
+import java.util.Optional;
 
 @Mod(ModCompanionPouch.MOD_ID)
 public class ModCompanionPouch {
@@ -79,16 +82,21 @@ public class ModCompanionPouch {
         }
 
         private static void onKeyPress(InputConstants.Key key) {
-            if (HandlerInput.shifting && useCompanionTemporal.isActiveAndMatches(key)) {
-                PacketRequestOpenInterfacePouch.sendToServer();
-                getClientPlayer().sendMessage(new TextComponent("open requested"), getClientPlayer().getUUID());
-                return;
+            if (useCompanionTemporal.isActiveAndMatches(key)) {
+                if (HandlerInput.shifting) {
+                    PacketRequestOpenInterfacePouch.sendToServer();
+                    return;
+                } else {
+                    Optional<ItemStack> pouchStackMaybe = HelperCompanions.getCompanionPouch(ModCompanionPouch.getClientPlayer());
+                    pouchStackMaybe.ifPresent(pouchStack -> {
+                        PacketRequestActivationTemporal.sendToServer(-1); // use pouch setting
+                    });
+                }
             }
 
             InputConstants.Key shiftKey = Minecraft.getInstance().options.keyShift.getKey();
             if (key.getValue() == shiftKey.getValue() && Minecraft.getInstance().screen == null) {
                 HandlerInput.shifting = true;
-                getClientPlayer().sendMessage(new TextComponent("shift pressed"), getClientPlayer().getUUID());
             }
         }
 
@@ -96,7 +104,6 @@ public class ModCompanionPouch {
             InputConstants.Key shiftKey = Minecraft.getInstance().options.keyShift.getKey();
             if (key.getValue() == shiftKey.getValue()) {
                 HandlerInput.shifting = false;
-                getClientPlayer().sendMessage(new TextComponent("shift released"), getClientPlayer().getUUID());
             }
         }
     }

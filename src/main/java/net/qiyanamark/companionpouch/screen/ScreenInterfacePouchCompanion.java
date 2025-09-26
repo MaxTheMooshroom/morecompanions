@@ -89,66 +89,114 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
     }
 
     protected void renderChrome(PoseStack poseStack) {
-        CatalogMenu.SCREEN_INTERFACE_CHROME.bind();
-        CatalogMenu.SCREEN_INTERFACE_CHROME.blit(poseStack, this.leftPos, this.topPos);
+        // CatalogMenu.SCREEN_INTERFACE_CHROME.bind();
+        // CatalogMenu.SCREEN_INTERFACE_CHROME.blit(poseStack, this.leftPos, this.topPos);
+
+        CatalogMenu.SCREEN_INTERFACE_CHROME.blitSlow(poseStack, this.leftPos, this.topPos);
     }
 
     protected void renderSlots(PoseStack poseStack) {
-        CatalogMenu.MENU_SLOT.bindFor(
-            poseStack,
-            ctx -> {
-                this.slotPositions.stream()
-                    .map(pair -> pair.getSecond())
-                    .forEach(pos -> {
-                        CatalogMenu.MENU_SLOT.blit(ctx, this.leftPos + pos.x(), this.topPos + pos.y());
-                    });
-            }
-        );
+        // CatalogMenu.MENU_SLOT.bindFor(
+        //     poseStack,
+        //     ctx -> {
+        //         this.slotPositions.stream()
+        //             .map(pair -> pair.getSecond())
+        //             .forEach(pos -> {
+        //                 CatalogMenu.MENU_SLOT.blit(ctx, this.leftPos + pos.x(), this.topPos + pos.y());
+        //             });
+        //     }
+        // );
+
+        this.slotPositions.stream()
+            .map(pair -> pair.getSecond())
+            .forEach(pos -> {
+                CatalogMenu.MENU_SLOT.blitSlow(poseStack, this.leftPos + pos.x(), this.topPos + pos.y());
+            });
     }
 
     protected void renderButtons(PoseStack poseStack) {
-        CatalogMenu.ACTIVATE_READY.bindFor(poseStack, ctx -> {
-            this.slotPositions.stream()
-                .filter(pair -> this.activatorsEnabled[pair.getFirst()])
-                .map(pair -> pair.getSecond())
-                .forEach(pos -> {
-                    CatalogMenu.ACTIVATE_READY.blit(
-                        ctx,
-                        this.leftPos + pos.x() + CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.x(),
-                        this.topPos + pos.y() + CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.y()
-                    );
-                });
-        });
+        // CatalogMenu.ACTIVATE_READY.bindFor(poseStack, ctx -> {
+        //     this.slotPositions.stream()
+        //         .filter(pair -> this.activatorsEnabled[pair.getFirst()])
+        //         .map(pair -> pair.getSecond())
+        //         .forEach(pos -> {
+        //             CatalogMenu.ACTIVATE_READY.blit(
+        //                 ctx,
+        //                 this.leftPos + pos.x() + CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.x(),
+        //                 this.topPos + pos.y() + CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.y()
+        //             );
+        //         });
+        // });
 
-        CatalogMenu.ACTIVATE_RESTING.bindFor(poseStack, ctx -> {
-            this.slotPositions.stream()
-                .filter(pair -> !this.activatorsEnabled[pair.getFirst()])
-                .map(pair -> pair.getSecond())
-                .forEach(pos -> {
-                    CatalogMenu.ACTIVATE_RESTING.blit(
-                        ctx,
-                        this.leftPos + pos.x() + CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.x(),
-                        this.topPos + pos.y() + CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.y()
-                    );
-                });
-        });
+        // CatalogMenu.ACTIVATE_RESTING.bindFor(poseStack, ctx -> {
+        //     this.slotPositions.stream()
+        //         .filter(pair -> !this.activatorsEnabled[pair.getFirst()])
+        //         .map(pair -> pair.getSecond())
+        //         .forEach(pos -> {
+        //             CatalogMenu.ACTIVATE_RESTING.blit(
+        //                 ctx,
+        //                 this.leftPos + pos.x() + CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.x(),
+        //                 this.topPos + pos.y() + CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.y()
+        //             );
+        //         });
+        // });
 
-        CatalogMenu.TOGGLE_OFF.bindFor(poseStack, ctx -> {
-            this.slotPositions.stream()
-                .filter(pair -> pair.getFirst() != this.toggleIndex)
-                .map(pair -> pair.getSecond())
-                .forEach(pos -> {
-                    CatalogMenu.TOGGLE_OFF.blit(
-                        ctx,
-                        this.leftPos + pos.x() + CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.x(),
-                        this.topPos + pos.y() + CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.y()
-                    );
-                });
-        });
+        // CatalogMenu.TOGGLE_OFF.bindFor(poseStack, ctx -> {
+        //     this.slotPositions.stream()
+        //         .filter(pair -> pair.getFirst() != this.toggleIndex)
+        //         .map(pair -> pair.getSecond())
+        //         .forEach(pos -> {
+        //             CatalogMenu.TOGGLE_OFF.blit(
+        //                 ctx,
+        //                 this.leftPos + pos.x() + CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.x(),
+        //                 this.topPos + pos.y() + CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.y()
+        //             );
+        //         });
+        // });
+
+        // Vec2i pos = this.slotPositions.stream().filter(p -> p.getFirst() == this.toggleIndex).map(pair -> pair.getSecond()).findFirst().get();
+        // CatalogMenu.TOGGLE_ON.bind();
+        // CatalogMenu.TOGGLE_ON.blit(
+        //     poseStack,
+        //     this.leftPos + pos.x() + CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.x(),
+        //     this.topPos + pos.y() + CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.y()
+        // );
+
+        this.slotPositions.stream()
+            .filter(pair -> this.activatorsEnabled[pair.getFirst()])
+            .map(pair -> pair.getSecond())
+            .forEach(pos -> {
+                CatalogMenu.ACTIVATE_READY.blitSlow(
+                    poseStack,
+                    this.leftPos + pos.x() + CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.x(),
+                    this.topPos + pos.y() + CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.y()
+                );
+            });
+
+        this.slotPositions.stream()
+            .filter(pair -> !this.activatorsEnabled[pair.getFirst()])
+            .map(pair -> pair.getSecond())
+            .forEach(pos -> {
+                CatalogMenu.ACTIVATE_RESTING.blitSlow(
+                    poseStack,
+                    this.leftPos + pos.x() + CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.x(),
+                    this.topPos + pos.y() + CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.y()
+                );
+            });
+
+        this.slotPositions.stream()
+            .filter(pair -> pair.getFirst() != this.toggleIndex)
+            .map(pair -> pair.getSecond())
+            .forEach(pos -> {
+                CatalogMenu.TOGGLE_OFF.blitSlow(
+                    poseStack,
+                    this.leftPos + pos.x() + CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.x(),
+                    this.topPos + pos.y() + CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.y()
+                );
+            });
 
         Vec2i pos = this.slotPositions.stream().filter(p -> p.getFirst() == this.toggleIndex).map(pair -> pair.getSecond()).findFirst().get();
-        CatalogMenu.TOGGLE_ON.bind();
-        CatalogMenu.TOGGLE_ON.blit(
+        CatalogMenu.TOGGLE_ON.blitSlow(
             poseStack,
             this.leftPos + pos.x() + CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.x(),
             this.topPos + pos.y() + CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.y()
@@ -158,6 +206,8 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
     @Override
     @Extends(AbstractContainerScreen.class)
     protected void renderBg(PoseStack poseStack, float pPartialTick, int pMouseX, int pMouseY) {
+        CatalogMenu.TEXTURE_ATLAS_MENUS_POUCH.prepareSlow();
+
         this.renderChrome(poseStack);
         this.renderSlots(poseStack);
         this.renderButtons(poseStack);

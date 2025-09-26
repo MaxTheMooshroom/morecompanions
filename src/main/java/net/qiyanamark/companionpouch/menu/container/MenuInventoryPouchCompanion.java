@@ -1,6 +1,5 @@
 package net.qiyanamark.companionpouch.menu.container;
 
-import iskallia.vault.item.CompanionItem;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.InteractionHand;
@@ -15,10 +14,11 @@ import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 
+import iskallia.vault.item.CompanionItem;
+
 import net.qiyanamark.companionpouch.capabilities.CapabilitiesPouchCompanion;
 import net.qiyanamark.companionpouch.catalog.CatalogMenu;
 import net.qiyanamark.companionpouch.helper.HelperInventory;
-import net.qiyanamark.companionpouch.screen.ScreenInventoryPouchCompanion;
 import net.qiyanamark.companionpouch.util.annotations.Extends;
 
 public class MenuInventoryPouchCompanion extends AbstractContainerMenu {
@@ -31,7 +31,6 @@ public class MenuInventoryPouchCompanion extends AbstractContainerMenu {
     // Server-side ctor
     public MenuInventoryPouchCompanion(int id, Inventory inv, ItemStack pouchStack, int slotCount) {
         super(CatalogMenu.COMPANION_POUCH_INVENTORY, id);
-        // this.slotCount = CapabilitiesPouchCompanion.getSize(pouchStack.getOrCreateTag()).orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT);
         this.slotCount = slotCount;
         this.pouchStack = pouchStack;
         this.handler = pouchStack
@@ -100,9 +99,14 @@ public class MenuInventoryPouchCompanion extends AbstractContainerMenu {
     }
 
     private void defineLayout(Inventory inv) {
-        int slotSpacing = (ScreenInventoryPouchCompanion.getSize().x() - (HelperInventory.PLAYER_INV_LEFT * 2)) / this.slotCount;
+        int slotWidth = CatalogMenu.MENU_SLOT.getSize().x();
+        int totalWidth = slotWidth * this.slotCount;
+        int remaining = CatalogMenu.SCREEN_INVENTORY_CHROME.getSize().x() - totalWidth;
+        int leftPadding = remaining / 2;
+        
         for (int i = 0; i < this.slotCount; i++) {
-            this.addSlot(new SlotContainerPouch(this.handler, i, HelperInventory.PLAYER_INV_LEFT + slotSpacing * i, 32));
+            int posX = leftPadding + i * slotWidth;
+            this.addSlot(new SlotContainerPouch(this.handler, i, posX, 32));
         }
 
         HelperInventory.playerInventory(inv).stream().forEach(slot -> this.addSlot(slot));

@@ -35,7 +35,7 @@ public class PacketRequestOpenInterfacePouch {
                 return;
             }
 
-            sPlayer.sendMessage(new TextComponent("open receieved"), sPlayer.getUUID());
+            sPlayer.sendMessage(new TextComponent("request received"), sPlayer.getUUID());
 
             // TODO replace this placeholder
             String containerI18n = "screen.companionpouch.interface_pouch_companion";

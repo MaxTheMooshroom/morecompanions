@@ -13,6 +13,7 @@ import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -100,6 +101,11 @@ public class CompositeTexture {
         return new ComponentTexture(this, texturePosition, size);
     }
 
+    public void prepareSlow() {
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderTexture(0, this.rel);
+    }
+
     /**
      * Unbinds any texture currently bound to the OpenGL context.
      */
@@ -147,6 +153,10 @@ public class CompositeTexture {
          */
         public Vec2i getSize() {
             return this.size.copy();
+        }
+
+        public void blitSlow(PoseStack poseStack, int x, int y) {
+            GuiComponent.blit(poseStack, x, y, this.texturePosition.x(), this.texturePosition.y(), this.size.x(), this.size.y(), 256, 256);
         }
 
         /**

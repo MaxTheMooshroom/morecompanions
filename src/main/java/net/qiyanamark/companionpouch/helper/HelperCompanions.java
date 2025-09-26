@@ -9,9 +9,12 @@ import java.util.Optional;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
-import top.theillusivec4.curios.api.CuriosApi;
 import iskallia.vault.core.vault.Vault;
+import iskallia.vault.init.ModItems;
 import iskallia.vault.item.CompanionItem;
+
+import top.theillusivec4.curios.api.CuriosApi;
+
 import net.qiyanamark.companionpouch.catalog.CatalogItem;
 import net.qiyanamark.companionpouch.item.ItemPouchCompanion;
 
@@ -22,7 +25,7 @@ public class HelperCompanions {
         }
 
         return CuriosApi.getCuriosHelper()
-            .findFirstCurio(entity, stack -> stack.getItem() instanceof CompanionItem || stack.getItem() instanceof ItemPouchCompanion)
+            .findFirstCurio(entity, stack -> stack.getItem() == ModItems.COMPANION || stack.getItem() == CatalogItem.COMPANION_POUCH)
             .map(slot -> {
                 ItemStack stack = slot.stack();
                 if (stack.getItem() instanceof ItemPouchCompanion) {

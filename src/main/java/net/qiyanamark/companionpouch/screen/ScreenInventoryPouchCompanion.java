@@ -1,10 +1,8 @@
 package net.qiyanamark.companionpouch.screen;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
@@ -30,22 +28,27 @@ public class ScreenInventoryPouchCompanion extends AbstractContainerScreen<MenuI
     }
 
     protected void renderChrome(PoseStack poseStack) {
-        CatalogMenu.SCREEN_INVENTORY_CHROME.upload();
-        CatalogMenu.SCREEN_INVENTORY_CHROME.bind();
-        CatalogMenu.SCREEN_INVENTORY_CHROME.blit(poseStack, this.leftPos, this.topPos);
+        // CatalogMenu.SCREEN_INVENTORY_CHROME.upload();
+        // CatalogMenu.SCREEN_INVENTORY_CHROME.bind();
+        // CatalogMenu.SCREEN_INVENTORY_CHROME.blit(poseStack, this.leftPos, this.topPos);
+
+        CatalogMenu.SCREEN_INVENTORY_CHROME.blitSlow(poseStack, this.leftPos, this.topPos);
     }
 
     protected void renderSlots(PoseStack poseStack) {
-        CatalogMenu.MENU_SLOT.upload();
-        CatalogMenu.MENU_SLOT.bindFor(poseStack, ctx -> {
-            this.menu.slots.forEach(slot -> CatalogMenu.MENU_SLOT.blit(ctx, this.leftPos + slot.x, this.topPos + slot.y));
-        });
+        // CatalogMenu.MENU_SLOT.upload();
+        // CatalogMenu.MENU_SLOT.bindFor(poseStack, ctx -> {
+        //     this.menu.slots.forEach(slot -> CatalogMenu.MENU_SLOT.blit(ctx, this.leftPos + slot.x, this.topPos + slot.y));
+        // });
+
+        this.menu.slots.forEach(slot -> CatalogMenu.MENU_SLOT.blitSlow(poseStack, this.leftPos + slot.x - 1, this.topPos + slot.y - 1));
     }
 
     @Override
     @Extends(AbstractContainerScreen.class)
     protected void renderBg(PoseStack poseStack, float pPartialTick, int pMouseX, int pMouseY) {
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        CatalogMenu.TEXTURE_ATLAS_MENUS_POUCH.prepareSlow();
+
         this.renderChrome(poseStack);
         this.renderSlots(poseStack);
     }

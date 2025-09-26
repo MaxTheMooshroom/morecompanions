@@ -26,8 +26,8 @@ public class CatalogNetwork {
     );
 
     public static void register() {
-        registerMessage("1", PacketRequestOpenInterfacePouch.class, null, PacketRequestOpenInterfacePouch::decode, PacketRequestOpenInterfacePouch::handle);
-        registerMessage("1", PacketRequestActivationTemporal.class, PacketRequestActivationTemporal::encode, PacketRequestActivationTemporal::decode, PacketRequestActivationTemporal::handle);
+        registerMessage("1", PacketRequestOpenInterfacePouch.class, PacketRequestOpenInterfacePouch::encode, PacketRequestOpenInterfacePouch::decode, PacketRequestOpenInterfacePouch::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        registerMessage("1", PacketRequestActivationTemporal.class, PacketRequestActivationTemporal::encode, PacketRequestActivationTemporal::decode, PacketRequestActivationTemporal::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
     }
 
     public static <MSG> void registerMessage(String protocolVersion, Class<MSG> messageType, BiConsumer<MSG, FriendlyByteBuf> encoder, Function<FriendlyByteBuf, MSG> decoder, BiConsumer<MSG, Supplier<NetworkEvent.Context>> messageConsumer) {

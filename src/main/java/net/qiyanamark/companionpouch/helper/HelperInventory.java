@@ -41,7 +41,7 @@ public class HelperInventory {
 
     static {
         PLAYER_INVENTORY = new ArrayList<>();
-        int hotbar_y = PLAYER_INV_TOP + 3 * ICON_HEIGHT_TOTAL + (ICON_SPACING * 2);
+        int hotbar_y = PLAYER_INV_TOP + 3 * ICON_HEIGHT_TOTAL + 4;
         // Player inventory 9x3
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {

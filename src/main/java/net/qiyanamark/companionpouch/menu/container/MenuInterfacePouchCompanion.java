@@ -33,12 +33,12 @@ public class MenuInterfacePouchCompanion extends AbstractContainerMenu {
     // Server-side ctor
     public MenuInterfacePouchCompanion(int id, Inventory inv, ItemStack pouchStack, int slotCount) {
         super(CatalogMenu.COMPANION_POUCH_INVENTORY, id);
-        // this.slotCount = CapabilitiesPouchCompanion.getSize(pouchStack.getOrCreateTag()).orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT);
+
         this.slotCount = slotCount;
         this.pouchStack = pouchStack;
         this.handler = pouchStack
                 .getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY)
-                .orElseThrow(IllegalStateException::new);
+                .orElseThrow(() -> new IllegalStateException("stack has no ITEM_HANDLER_CAPABILITY; stack registry name: " + pouchStack.getItem().getRegistryName()));
 
         defineLayout(inv);
     }

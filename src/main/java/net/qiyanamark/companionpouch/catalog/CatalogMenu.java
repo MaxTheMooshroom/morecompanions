@@ -22,7 +22,7 @@ public class CatalogMenu {
     public static final CompositeTexture TEXTURE_ATLAS_MENUS_POUCH = new CompositeTexture("textures/gui/container/pouch_companion.png");
 
     public static final ComponentTexture SCREEN_INVENTORY_CHROME = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(0, 0), new Vec2i(174, 164));
-    public static final ComponentTexture SCREEN_INTERFACE_CHROME = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(0, 166), new Vec2i(252, 64));
+    public static final ComponentTexture SCREEN_INTERFACE_CHROME = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(0, 166), new Vec2i(252, 63));
 
     public static final ComponentTexture ACTIVATE_READY = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(0, 0), new Vec2i(0, 0));
     public static final ComponentTexture ACTIVATE_RESTING = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(0, 0), new Vec2i(0, 0));

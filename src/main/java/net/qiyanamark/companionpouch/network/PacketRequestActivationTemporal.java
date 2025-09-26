@@ -13,6 +13,8 @@ import net.minecraftforge.network.NetworkEvent;
 import iskallia.vault.core.vault.Vault;
 import iskallia.vault.core.vault.VaultUtils;
 import iskallia.vault.item.CompanionItem;
+import net.qiyanamark.companionpouch.capabilities.CapabilityTemporalIndex;
+import net.qiyanamark.companionpouch.capabilities.ITemporalIndex;
 import net.qiyanamark.companionpouch.catalog.CatalogNetwork;
 import net.qiyanamark.companionpouch.helper.HelperCompanions;
 
@@ -31,14 +33,29 @@ public class PacketRequestActivationTemporal {
         return new PacketRequestActivationTemporal(buf.readByte());
     }
 
-    public static void handle(PacketRequestActivationTemporal packet, Supplier<NetworkEvent.Context> ctxSupplier) {
+    public static void handle(PacketRequestActivationTemporal request, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context ctx = ctxSupplier.get();
 
         ctx.enqueueWork(() -> {
             ServerPlayer sPlayer = ctx.getSender();
+            int companionIndex = request.companionIndex;
+            
+            if (request.companionIndex == -1) {
+                Optional<ItemStack> pouchStack = HelperCompanions.getCompanionPouch(sPlayer);
+                if (pouchStack.isEmpty()) {
+                    return;
+                }
+
+                ITemporalIndex cap = pouchStack.orElseThrow()
+                    .getCapability(CapabilityTemporalIndex.TEMPORAL_INDEX_CAPABILITY)
+                    .orElseThrow(IllegalStateException::new);
+
+                companionIndex = cap.getIndex();
+            }
+
             List<ItemStack> companions = HelperCompanions.getCompanions(sPlayer);
 
-            if (companions.size() <= packet.companionIndex) {
+            if (companions.size() <= companionIndex) {
                 return;
             }
             
@@ -50,7 +67,7 @@ public class PacketRequestActivationTemporal {
             }
 
             Vault vault = vaultMaybe.get();
-            ItemStack companionStack = companions.get(packet.companionIndex);
+            ItemStack companionStack = companions.get(companionIndex);
             if (!CompanionItem.hasUsedTemporalIn(companionStack, vault.get(Vault.ID))) {
                 CompanionItem.activateTemporalModifier(sPlayer, companionStack, vault);
             }
