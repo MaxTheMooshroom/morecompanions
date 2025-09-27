@@ -16,7 +16,7 @@ import net.minecraftforge.items.SlotItemHandler;
 
 import iskallia.vault.item.CompanionItem;
 
-import net.qiyanamark.companionpouch.capabilities.CapabilitiesPouchCompanion;
+import net.qiyanamark.companionpouch.capabilities.ProviderCapabilityPouchCompanion;
 import net.qiyanamark.companionpouch.catalog.CatalogMenu;
 import net.qiyanamark.companionpouch.helper.HelperInventory;
 import net.qiyanamark.companionpouch.util.annotations.Extends;
@@ -35,7 +35,7 @@ public class MenuInventoryPouchCompanion extends AbstractContainerMenu {
         this.pouchStack = pouchStack;
         this.handler = pouchStack
                 .getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY)
-                .orElseThrow(IllegalStateException::new);
+                .orElseThrow(() -> new IllegalStateException("stack has no ITEM_HANDLER_CAPABILITY; stack registry name: " + pouchStack.getItem().getRegistryName()));
 
         defineLayout(inv);
     }
@@ -52,7 +52,7 @@ public class MenuInventoryPouchCompanion extends AbstractContainerMenu {
         return new SimpleMenuProvider(
                 (id, inv, player) -> {
                     ItemStack pouchStack = player.getItemInHand(hand);
-                    byte slotCount = CapabilitiesPouchCompanion.getSizeOrDefault(pouchStack.getOrCreateTag());
+                    byte slotCount = ProviderCapabilityPouchCompanion.getSizeOrDefault(pouchStack.getOrCreateTag());
                     return new MenuInventoryPouchCompanion(id, inv, pouchStack, slotCount);
                 },
                 new TranslatableComponent(containerI18n)

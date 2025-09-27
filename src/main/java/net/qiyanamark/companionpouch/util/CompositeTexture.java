@@ -156,6 +156,7 @@ public class CompositeTexture {
         }
 
         public void blitSlow(PoseStack poseStack, int x, int y) {
+            this.parent.prepareSlow();
             GuiComponent.blit(poseStack, x, y, this.texturePosition.x(), this.texturePosition.y(), this.size.x(), this.size.y(), 256, 256);
         }
 

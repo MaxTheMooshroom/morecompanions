@@ -4,6 +4,6 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
 
-public class CapabilityTemporalIndex {
-    public static final Capability<ITemporalIndex> TEMPORAL_INDEX_CAPABILITY = CapabilityManager.get(new CapabilityToken<>(){});
+public class CapabilityDataPouchCompanion {
+    public static final Capability<IDataPouchCompanion> COMPANION_POUCH_CAPABILITY = CapabilityManager.get(new CapabilityToken<>(){});
 }

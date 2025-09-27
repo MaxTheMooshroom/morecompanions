@@ -4,7 +4,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.item.ItemStack;
@@ -12,7 +11,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkHooks;
 
-import net.qiyanamark.companionpouch.capabilities.CapabilitiesPouchCompanion;
+import net.qiyanamark.companionpouch.capabilities.ProviderCapabilityPouchCompanion;
 import net.qiyanamark.companionpouch.catalog.CatalogNetwork;
 import net.qiyanamark.companionpouch.helper.HelperCompanions;
 import net.qiyanamark.companionpouch.menu.container.MenuInterfacePouchCompanion;
@@ -31,22 +30,18 @@ public class PacketRequestOpenInterfacePouch {
             Optional<ItemStack> equippedPouchMaybe = HelperCompanions.getCompanionPouch(sPlayer);
 
             if (equippedPouchMaybe.isEmpty()) {
-                ctx.setPacketHandled(true);
                 return;
             }
-
-            sPlayer.sendMessage(new TextComponent("request received"), sPlayer.getUUID());
 
             // TODO replace this placeholder
             String containerI18n = "screen.companionpouch.interface_pouch_companion";
 
             ItemStack equippedPouch = equippedPouchMaybe.get();
-            byte slotCount = CapabilitiesPouchCompanion.getSizeOrDefault(equippedPouch.getOrCreateTag());
+            byte slotCount = ProviderCapabilityPouchCompanion.getSizeOrDefault(equippedPouch.getOrCreateTag());
             
             SimpleMenuProvider provider = MenuInterfacePouchCompanion.getProvider(equippedPouch, containerI18n);
             NetworkHooks.openGui(sPlayer, provider, buf -> {
                 buf.writeByte(slotCount);
-                buf.writeUUID(sPlayer.getUUID());
             });
         });
 

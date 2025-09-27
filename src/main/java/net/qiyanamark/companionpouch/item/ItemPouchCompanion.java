@@ -28,7 +28,8 @@ import top.theillusivec4.curios.api.SlotContext;
 import top.theillusivec4.curios.api.type.capability.ICurioItem;
 
 import net.qiyanamark.companionpouch.ModCompanionPouch;
-import net.qiyanamark.companionpouch.capabilities.CapabilitiesPouchCompanion;
+import net.qiyanamark.companionpouch.capabilities.ProviderCapabilityPouchCompanion;
+import net.qiyanamark.companionpouch.menu.container.MenuInterfacePouchCompanion;
 import net.qiyanamark.companionpouch.menu.container.MenuInventoryPouchCompanion;
 import net.qiyanamark.companionpouch.util.annotations.Extends;
 import net.qiyanamark.companionpouch.util.annotations.Implements;
@@ -64,15 +65,25 @@ public class ItemPouchCompanion extends Item implements ICurioItem {
         ItemStack stack = player.getItemInHand(hand);
 
         if (player instanceof ServerPlayer sPlayer) {
-            // TODO replace this placeholder
-            String containerI18n = "screen.companionpouch.inventory_pouch_companion";
+            byte slotCount = ProviderCapabilityPouchCompanion.getSizeOrDefault(stack.getOrCreateTag());
+            if (!sPlayer.isCrouching()) {
+                // TODO replace this placeholder
+                String containerI18n = "screen.companionpouch.inventory_pouch_companion";
 
-            byte slotCount = CapabilitiesPouchCompanion.getSizeOrDefault(stack.getOrCreateTag());
-            SimpleMenuProvider provider = MenuInventoryPouchCompanion.getProvider(hand, containerI18n);
-            NetworkHooks.openGui(sPlayer, provider, buf -> {
-                buf.writeBoolean(hand == InteractionHand.MAIN_HAND);
-                buf.writeByte(slotCount);
-            });
+                SimpleMenuProvider provider = MenuInventoryPouchCompanion.getProvider(hand, containerI18n);
+                NetworkHooks.openGui(sPlayer, provider, buf -> {
+                    buf.writeBoolean(hand == InteractionHand.MAIN_HAND);
+                    buf.writeByte(slotCount);
+                });
+            } else {
+                // TODO replace this placeholder
+                String containerI18n = "screen.companionpouch.interface_pouch_companion";
+
+                SimpleMenuProvider provider = MenuInterfacePouchCompanion.getProvider(stack, containerI18n);
+                NetworkHooks.openGui(sPlayer, provider, buf -> {
+                    buf.writeByte(slotCount);
+                });
+            }
         }
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
@@ -81,7 +92,7 @@ public class ItemPouchCompanion extends Item implements ICurioItem {
     @Override
     @Implements(value = IForgeItem.class, introducedBy = Item.class)
     public @Nullable ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
-        return new CapabilitiesPouchCompanion(stack, nbt);
+        return new ProviderCapabilityPouchCompanion(stack, nbt);
     }
 
     // note: dimRel.getNamespace() is not a bug or typo, it is consistent with behaviour defined

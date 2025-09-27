@@ -40,6 +40,14 @@ public class Structs {
             return new Vec2i(this.x - a, this.y - b);
         }
 
+        public Vec2i add(Vec2i other) {
+            return new Vec2i(this.x + other.x, this.y + other.y);
+        }
+
+        public Vec2i sub(Vec2i other) {
+            return new Vec2i(this.x - other.x, this.y - other.y);
+        }
+
         public Vec2i mul(int m) {
             return new Vec2i(this.x * m, this.y * m);
         }

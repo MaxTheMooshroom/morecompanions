@@ -13,8 +13,8 @@ import net.minecraftforge.network.NetworkEvent;
 import iskallia.vault.core.vault.Vault;
 import iskallia.vault.core.vault.VaultUtils;
 import iskallia.vault.item.CompanionItem;
-import net.qiyanamark.companionpouch.capabilities.CapabilityTemporalIndex;
-import net.qiyanamark.companionpouch.capabilities.ITemporalIndex;
+import net.qiyanamark.companionpouch.capabilities.CapabilityDataPouchCompanion;
+import net.qiyanamark.companionpouch.capabilities.IDataPouchCompanion;
 import net.qiyanamark.companionpouch.catalog.CatalogNetwork;
 import net.qiyanamark.companionpouch.helper.HelperCompanions;
 
@@ -46,11 +46,11 @@ public class PacketRequestActivationTemporal {
                     return;
                 }
 
-                ITemporalIndex cap = pouchStack.orElseThrow()
-                    .getCapability(CapabilityTemporalIndex.TEMPORAL_INDEX_CAPABILITY)
+                IDataPouchCompanion cap = pouchStack.orElseThrow()
+                    .getCapability(CapabilityDataPouchCompanion.COMPANION_POUCH_CAPABILITY)
                     .orElseThrow(IllegalStateException::new);
 
-                companionIndex = cap.getIndex();
+                companionIndex = cap.getActivationIndex();
             }
 
             List<ItemStack> companions = HelperCompanions.getCompanions(sPlayer);

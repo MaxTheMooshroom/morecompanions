@@ -83,15 +83,15 @@ public class ModCompanionPouch {
 
         private static void onKeyPress(InputConstants.Key key) {
             if (useCompanionTemporal.isActiveAndMatches(key)) {
-                if (HandlerInput.shifting) {
-                    PacketRequestOpenInterfacePouch.sendToServer();
-                    return;
-                } else {
-                    Optional<ItemStack> pouchStackMaybe = HelperCompanions.getCompanionPouch(ModCompanionPouch.getClientPlayer());
-                    pouchStackMaybe.ifPresent(pouchStack -> {
+                Optional<ItemStack> pouchStackMaybe = HelperCompanions.getCompanionPouch(ModCompanionPouch.getClientPlayer());
+
+                pouchStackMaybe.ifPresent(pouchStack -> {
+                    if (HandlerInput.shifting) {
+                        PacketRequestOpenInterfacePouch.sendToServer();
+                    } else {
                         PacketRequestActivationTemporal.sendToServer(-1); // use pouch setting
-                    });
-                }
+                    }
+                });
             }
 
             InputConstants.Key shiftKey = Minecraft.getInstance().options.keyShift.getKey();

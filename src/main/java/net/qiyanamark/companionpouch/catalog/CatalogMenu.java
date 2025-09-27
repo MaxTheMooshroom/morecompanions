@@ -24,11 +24,11 @@ public class CatalogMenu {
     public static final ComponentTexture SCREEN_INVENTORY_CHROME = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(0, 0), new Vec2i(174, 164));
     public static final ComponentTexture SCREEN_INTERFACE_CHROME = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(0, 166), new Vec2i(252, 63));
 
-    public static final ComponentTexture ACTIVATE_READY = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(0, 0), new Vec2i(0, 0));
-    public static final ComponentTexture ACTIVATE_RESTING = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(0, 0), new Vec2i(0, 0));
+    public static final ComponentTexture ACTIVATE_READY = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(176, 28), new Vec2i(24, 24));
+    public static final ComponentTexture ACTIVATE_RESTING = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(204, 28), new Vec2i(24, 24));
 
-    public static final ComponentTexture TOGGLE_ON = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(176, 54), new Vec2i(12, 5));
-    public static final ComponentTexture TOGGLE_OFF = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(176, 61), new Vec2i(12, 5));
+    public static final ComponentTexture TOGGLER_ON = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(176, 54), new Vec2i(12, 5));
+    public static final ComponentTexture TOGGLER_OFF = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(176, 61), new Vec2i(12, 5));
 
     public static final ComponentTexture MENU_SLOT = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(192, 54), new Vec2i(18, 18));
     public static final Vec2i MENU_INTERFACE_SLOT_PADDING_LEFT_TOP = new Vec2i(11, 7);
@@ -40,8 +40,8 @@ public class CatalogMenu {
     public static void registerMenus(RegistryEvent.Register<MenuType<?>> event) {
         IForgeRegistry<MenuType<?>> registry = event.getRegistry();
 
-        registry.register(COMPANION_POUCH_INVENTORY.setRegistryName(MenuInventoryPouchCompanion.MENU_ID));
         registry.register(COMPANION_POUCH_INTERFACE.setRegistryName(MenuInterfacePouchCompanion.MENU_ID));
+        registry.register(COMPANION_POUCH_INVENTORY.setRegistryName(MenuInventoryPouchCompanion.MENU_ID));
     }
 
     static {

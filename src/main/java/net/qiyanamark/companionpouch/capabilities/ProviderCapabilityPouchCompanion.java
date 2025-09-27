@@ -1,6 +1,14 @@
 package net.qiyanamark.companionpouch.capabilities;
 
+import java.util.Optional;
+import java.util.stream.IntStream;
+
+import javax.annotation.Nullable;
+
+import com.mojang.datafixers.util.Pair;
+
 import net.minecraft.core.Direction;
+import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 
@@ -11,32 +19,19 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.common.capabilities.Capability;
 
-import java.util.Optional;
-
-import javax.annotation.Nullable;
-
 import iskallia.vault.item.CompanionItem;
 import net.qiyanamark.companionpouch.item.ItemPouchCompanion;
 import net.qiyanamark.companionpouch.util.annotations.Extends;
 import net.qiyanamark.companionpouch.util.annotations.Implements;
 
-public class CapabilitiesPouchCompanion extends ItemStackHandler implements ICapabilityProvider, ITemporalIndex {
-    private static final String SIZE_KEY = "size";
-    private static final String ACTIVATE_KEY = "activate";
-    private static final String STORAGE_KEY = "contents";
-
-    private final ItemStack stack;
-    private final LazyOptional<?> lazy = LazyOptional.of(() -> this);
-
-    private int activationIndex = 0;
-
-    public CapabilitiesPouchCompanion(ItemStack stack, @Nullable CompoundTag nbt) {
-        super(CapabilitiesPouchCompanion.getSizeOrDefault(nbt));
+public class ProviderCapabilityPouchCompanion extends ItemStackHandler implements ICapabilityProvider, IDataPouchCompanion {
+    public ProviderCapabilityPouchCompanion(ItemStack stack, @Nullable CompoundTag nbt) {
+        super(ProviderCapabilityPouchCompanion.getSizeOrDefault(nbt));
 
         this.stack = stack;
-        initFromNbt(nbt);
+        this.initFromNbt(nbt);
 
-        load();
+        this.load();
         this.lazy.resolve();
     }
 
@@ -49,7 +44,7 @@ public class CapabilitiesPouchCompanion extends ItemStackHandler implements ICap
     }
 
     public static byte getSizeOrDefault(@Nullable CompoundTag nbt) {
-        return CapabilitiesPouchCompanion.getSize(nbt).orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT);
+        return ProviderCapabilityPouchCompanion.getSize(nbt).orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT);
     }
 
     @SuppressWarnings("unchecked")
@@ -58,7 +53,7 @@ public class CapabilitiesPouchCompanion extends ItemStackHandler implements ICap
     public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
         if (cap == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
             return (LazyOptional<T>) this.lazy;
-        } else if (cap == CapabilityTemporalIndex.TEMPORAL_INDEX_CAPABILITY) {
+        } else if (cap == CapabilityDataPouchCompanion.COMPANION_POUCH_CAPABILITY) {
             return (LazyOptional<T>) this.lazy;
         } else {
             return LazyOptional.empty();
@@ -72,10 +67,56 @@ public class CapabilitiesPouchCompanion extends ItemStackHandler implements ICap
     }
 
     @Override
+    @Implements(IDataPouchCompanion.class)
+    public int getActivationIndex() {
+        return this.activationIndex;
+    }
+
+    @Override
+    @Implements(IDataPouchCompanion.class)
+    public void setActivationIndex(int index) {
+        this.activationIndex = index;
+        this.save();
+    }
+
+    @Override
+    @Implements(IDataPouchCompanion.class)
+    public int getSize() {
+        return this.size;
+    }
+
+    @Override
+    @Implements(IDataPouchCompanion.class)
+    public NonNullList<ItemStack> getItemStacks() {
+        return this.stacks;
+    }
+
+    @Override
+    @Implements(IDataPouchCompanion.class)
+    public NonNullList<Pair<Integer, ItemStack>> getCompanions() {
+        NonNullList<Pair<Integer, ItemStack>> list = NonNullList.createWithCapacity(this.size);
+        IntStream.range(0, this.size)
+            .mapToObj(i -> new Pair<Integer, ItemStack>(i, this.getStackInSlot(i)))
+            .filter(pair -> !pair.getSecond().isEmpty())
+            .forEach(pair -> list.add(pair));
+        return list;
+    }
+
+    @Override
     @Extends(ItemStackHandler.class)
     protected void onContentsChanged(int slot) {
         this.save();
     }
+
+    private static final String SIZE_KEY = "size";
+    private static final String ACTIVATE_KEY = "activate";
+    private static final String STORAGE_KEY = "contents";
+
+    private final ItemStack stack;
+    private final LazyOptional<?> lazy = LazyOptional.of(() -> this);
+    
+    private int size = 0;
+    private int activationIndex = 0;
 
     private void initFromNbt(@Nullable CompoundTag nbt) {
         if (nbt == null) {
@@ -88,6 +129,9 @@ public class CapabilitiesPouchCompanion extends ItemStackHandler implements ICap
             stackData.put(STORAGE_KEY, nbt.get(STORAGE_KEY));
         }
 
+        int size = nbt.contains(SIZE_KEY) ? nbt.getInt(SIZE_KEY) : 3;
+        stackData.putInt(SIZE_KEY, size);
+
         byte activateSlotIndex = nbt.contains(ACTIVATE_KEY) ? nbt.getByte(ACTIVATE_KEY) : (byte) 0;
         stackData.putByte(ACTIVATE_KEY, activateSlotIndex);
     }
@@ -96,6 +140,9 @@ public class CapabilitiesPouchCompanion extends ItemStackHandler implements ICap
         CompoundTag tag = this.stack.getOrCreateTag();
         if (tag.contains(STORAGE_KEY)) {
             this.deserializeNBT(tag.getCompound(STORAGE_KEY));
+        }
+        if (tag.contains(SIZE_KEY)) {
+            this.size = tag.getInt(SIZE_KEY);
         }
         if (tag.contains(ACTIVATE_KEY)) {
             this.activationIndex = tag.getByte(ACTIVATE_KEY);
@@ -106,17 +153,5 @@ public class CapabilitiesPouchCompanion extends ItemStackHandler implements ICap
         CompoundTag tag = this.stack.getOrCreateTag();
         tag.put(STORAGE_KEY, this.serializeNBT());
         tag.putByte(ACTIVATE_KEY, (byte) this.activationIndex);
-    }
-
-    @Override
-    @Implements(ITemporalIndex.class)
-    public int getIndex() {
-        return this.activationIndex;
-    }
-
-    @Override
-    public void setIndex(int index) {
-        this.activationIndex = index;
-        this.save();
     }
 }
