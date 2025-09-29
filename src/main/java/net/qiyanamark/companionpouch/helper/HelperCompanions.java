@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
@@ -25,7 +26,7 @@ public class HelperCompanions {
         }
 
         return CuriosApi.getCuriosHelper()
-            .findFirstCurio(entity, stack -> stack.getItem() == ModItems.COMPANION || stack.getItem() == CatalogItem.COMPANION_POUCH)
+            .findFirstCurio(entity, stack -> stack.getItem() == ModItems.COMPANION || stack.getItem() == CatalogItem.COMPANION_POUCH.get())
             .map(slot -> {
                 ItemStack stack = slot.stack();
                 if (stack.getItem() instanceof ItemPouchCompanion) {
@@ -43,8 +44,25 @@ public class HelperCompanions {
         }
 
         return CuriosApi.getCuriosHelper()
-            .findFirstCurio(entity, stack -> stack.getItem() == CatalogItem.COMPANION_POUCH)
-            .map(result -> result.stack());
+            .findFirstCurio(entity, stack -> stack.getItem() == CatalogItem.COMPANION_POUCH.get())
+            .map(result -> result.stack())
+            .or(() -> {
+                if (!(entity instanceof ServerPlayer sPlayer)) {
+                    return Optional.empty();
+                }
+
+                ItemStack handStack = sPlayer.getMainHandItem();
+                if (handStack != null && !handStack.isEmpty()) {
+                    return Optional.of(handStack);
+                }
+
+                handStack = sPlayer.getOffhandItem();
+                if (handStack != null && !handStack.isEmpty()) {
+                    return Optional.of(handStack);
+                }
+
+                return Optional.empty();
+            });
     }
 
     public static boolean companionCanUseTemporalInVault(ItemStack companionStack, Vault vault) {

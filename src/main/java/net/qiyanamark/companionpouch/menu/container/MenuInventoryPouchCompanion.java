@@ -23,6 +23,7 @@ import net.qiyanamark.companionpouch.util.annotations.Extends;
 
 public class MenuInventoryPouchCompanion extends AbstractContainerMenu {
     public static final String MENU_ID = "container_inventory_pouch_companion";
+    public static final String SCREEN_I18N = "screen.companionpouch.interface_pouch_companion";
 
     private final ItemStack pouchStack;
     private final IItemHandler handler;
@@ -48,14 +49,14 @@ public class MenuInventoryPouchCompanion extends AbstractContainerMenu {
         return new MenuInventoryPouchCompanion(id, inv, pouchStack, slotCount);
     }
 
-    public static SimpleMenuProvider getProvider(InteractionHand hand, String containerI18n) {
+    public static SimpleMenuProvider getProvider(InteractionHand hand) {
         return new SimpleMenuProvider(
                 (id, inv, player) -> {
                     ItemStack pouchStack = player.getItemInHand(hand);
                     byte slotCount = ProviderCapabilityPouchCompanion.getSizeOrDefault(pouchStack.getOrCreateTag());
                     return new MenuInventoryPouchCompanion(id, inv, pouchStack, slotCount);
                 },
-                new TranslatableComponent(containerI18n)
+                new TranslatableComponent(SCREEN_I18N)
             );
     }
 

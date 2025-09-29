@@ -29,17 +29,14 @@ public class PacketRequestOpenInterfacePouch {
             ServerPlayer sPlayer = ctx.getSender();
             Optional<ItemStack> equippedPouchMaybe = HelperCompanions.getCompanionPouch(sPlayer);
 
-            if (equippedPouchMaybe.isEmpty()) {
+            if (equippedPouchMaybe.isEmpty() || equippedPouchMaybe.get().isEmpty()) {
                 return;
             }
-
-            // TODO replace this placeholder
-            String containerI18n = "screen.companionpouch.interface_pouch_companion";
 
             ItemStack equippedPouch = equippedPouchMaybe.get();
             byte slotCount = ProviderCapabilityPouchCompanion.getSizeOrDefault(equippedPouch.getOrCreateTag());
             
-            SimpleMenuProvider provider = MenuInterfacePouchCompanion.getProvider(equippedPouch, containerI18n);
+            SimpleMenuProvider provider = MenuInterfacePouchCompanion.getProvider(equippedPouch);
             NetworkHooks.openGui(sPlayer, provider, buf -> {
                 buf.writeByte(slotCount);
             });

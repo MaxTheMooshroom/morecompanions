@@ -23,6 +23,7 @@ import net.qiyanamark.companionpouch.util.annotations.Extends;
 
 public class MenuInterfacePouchCompanion extends AbstractContainerMenu {
     public static final String MENU_ID = "container_interface_pouch_companion";
+    public static final String SCREEN_I18N = "screen.companionpouch.interface_pouch_companion";
 
     private final ItemStack pouchStack;
     private final IItemHandler handler;
@@ -46,31 +47,35 @@ public class MenuInterfacePouchCompanion extends AbstractContainerMenu {
         int slotCount = buf.readByte();
         LocalPlayer lPlayer = ModCompanionPouch.getClientPlayer();
 
+        ModCompanionPouch.messageLocal("hit0");
         return HelperCompanions.getCompanionPouch(lPlayer)
             .map(stack -> new MenuInterfacePouchCompanion(id, inv, stack, slotCount))
             .orElseGet(() -> {
                 ItemStack hand = lPlayer.getMainHandItem();
-                if (!hand.isEmpty() && hand.getItem() == CatalogItem.COMPANION_POUCH) {
+                if (!hand.isEmpty() && hand.getItem() == CatalogItem.COMPANION_POUCH.get()) {
+                    ModCompanionPouch.messageLocal("hit1");
                     return new MenuInterfacePouchCompanion(id, inv, hand, slotCount);
                 }
 
                 hand = lPlayer.getOffhandItem();
-                if (!hand.isEmpty() && hand.getItem() == CatalogItem.COMPANION_POUCH) {
+                if (!hand.isEmpty() && hand.getItem() == CatalogItem.COMPANION_POUCH.get()) {
+                    ModCompanionPouch.messageLocal("hit2");
                     return new MenuInterfacePouchCompanion(id, inv, hand, slotCount);
                 }
-
+                
+                ModCompanionPouch.messageLocal("hit3");
                 return null;
             });
             // .orElse(null);
     }
 
-    public static SimpleMenuProvider getProvider(ItemStack pouchStack, String containerI18n) {
+    public static SimpleMenuProvider getProvider(ItemStack pouchStack) {
         return new SimpleMenuProvider(
                 (id, inv, player) -> {
                     byte slotCount = ProviderCapabilityPouchCompanion.getSizeOrDefault(pouchStack.getOrCreateTag());
                     return new MenuInterfacePouchCompanion(id, inv, pouchStack, slotCount);
                 },
-                new TranslatableComponent(containerI18n)
+                new TranslatableComponent(SCREEN_I18N)
             );
     }
 

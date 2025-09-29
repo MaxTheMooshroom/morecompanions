@@ -27,7 +27,6 @@ import static iskallia.vault.init.ModItems.VAULT_MOD_GROUP;
 import top.theillusivec4.curios.api.SlotContext;
 import top.theillusivec4.curios.api.type.capability.ICurioItem;
 
-import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.capabilities.ProviderCapabilityPouchCompanion;
 import net.qiyanamark.companionpouch.menu.container.MenuInterfacePouchCompanion;
 import net.qiyanamark.companionpouch.menu.container.MenuInventoryPouchCompanion;
@@ -35,16 +34,11 @@ import net.qiyanamark.companionpouch.util.annotations.Extends;
 import net.qiyanamark.companionpouch.util.annotations.Implements;
 
 public class ItemPouchCompanion extends Item implements ICurioItem {
-    public static final String REL_STRING = "pouch_companion";
+    public static final String REL_PATH = "pouch_companion";
     public static final byte DEFAULT_SLOT_COUNT = 3;
 
-    protected ItemPouchCompanion(ResourceLocation rel) {
-        super(new Properties().stacksTo(1).tab(VAULT_MOD_GROUP));
-        this.setRegistryName(rel);
-    }
-
     public ItemPouchCompanion() {
-        this(ModCompanionPouch.rel(REL_STRING));
+        super(new Properties().stacksTo(1).tab(VAULT_MOD_GROUP));
     }
 
     public static List<ItemStack> getContents(ItemStack stack) {
@@ -63,23 +57,18 @@ public class ItemPouchCompanion extends Item implements ICurioItem {
     @Extends(Item.class)
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        byte slotCount = ProviderCapabilityPouchCompanion.getSizeOrDefault(stack.getOrCreateTag());
 
         if (player instanceof ServerPlayer sPlayer) {
-            byte slotCount = ProviderCapabilityPouchCompanion.getSizeOrDefault(stack.getOrCreateTag());
             if (!sPlayer.isCrouching()) {
-                // TODO replace this placeholder
-                String containerI18n = "screen.companionpouch.inventory_pouch_companion";
-
-                SimpleMenuProvider provider = MenuInventoryPouchCompanion.getProvider(hand, containerI18n);
+                SimpleMenuProvider provider = MenuInventoryPouchCompanion.getProvider(hand);
                 NetworkHooks.openGui(sPlayer, provider, buf -> {
                     buf.writeBoolean(hand == InteractionHand.MAIN_HAND);
                     buf.writeByte(slotCount);
                 });
+                
             } else {
-                // TODO replace this placeholder
-                String containerI18n = "screen.companionpouch.interface_pouch_companion";
-
-                SimpleMenuProvider provider = MenuInterfacePouchCompanion.getProvider(stack, containerI18n);
+                SimpleMenuProvider provider = MenuInterfacePouchCompanion.getProvider(stack);
                 NetworkHooks.openGui(sPlayer, provider, buf -> {
                     buf.writeByte(slotCount);
                 });
