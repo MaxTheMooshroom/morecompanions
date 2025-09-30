@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.qiyanamark.companionpouch.mixins",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "companionpouch.refmap.json",
+  "mixins": [
+    "MixinCompanionItem",
+    "MixinVaultPlayerEvents"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

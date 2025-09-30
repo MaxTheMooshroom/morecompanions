@@ -1,4 +1,7 @@
 {
-  "item.companionpouch.companion_pouch": "Companion Pouch",
-  "screen.companionpouch.companion_pouch": "Companion Pouch"
+  "item.companionpouch.pouch_companion": "Companion Pouch",
+  "screen.companionpouch.inventory_pouch_companion": "Companion Pouch",
+  "screen.companionpouch.interface_pouch_companion": "Companion Pouch",
+  "curios.identifier.pouch_companion": "Companion Pouch",
+  "companion.companionpouch.relic.applied": "<%s> My relics have been applied!"
 }

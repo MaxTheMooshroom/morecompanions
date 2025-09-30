@@ -6,6 +6,12 @@
 *.ipr
 *.iws
 
+# Windows temp files
+*~
+
+# Krita autosave files
+*.kra-autosave.kra
+
 # Nix Package Manager
 .direnv/
 
@@ -108,6 +114,7 @@ $RECYCLE.BIN/
 
 .gradle
 build/
+bin/
 
 # Ignore Gradle GUI config
 gradle-app.setting
