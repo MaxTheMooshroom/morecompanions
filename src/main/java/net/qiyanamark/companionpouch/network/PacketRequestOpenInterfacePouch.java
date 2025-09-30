@@ -10,34 +10,47 @@ import net.minecraft.world.item.ItemStack;
 
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkHooks;
-
-import net.qiyanamark.companionpouch.capabilities.ProviderCapabilityPouchCompanion;
+import net.qiyanamark.companionpouch.ModCompanionPouch;
+import net.qiyanamark.companionpouch.capabilities.CapabilityDataPouchCompanion;
+import net.qiyanamark.companionpouch.capabilities.IDataPouchCompanion;
 import net.qiyanamark.companionpouch.catalog.CatalogNetwork;
 import net.qiyanamark.companionpouch.helper.HelperCompanions;
+import net.qiyanamark.companionpouch.item.ItemPouchCompanion;
 import net.qiyanamark.companionpouch.menu.container.MenuInterfacePouchCompanion;
+import net.qiyanamark.companionpouch.util.Structs;
+import org.jetbrains.annotations.Contract;
 
 public class PacketRequestOpenInterfacePouch {
-    private static PacketRequestOpenInterfacePouch INSTANCE = new PacketRequestOpenInterfacePouch();
+    @SuppressWarnings("UtilityClassWithoutPrivateConstructor")
+    private static final PacketRequestOpenInterfacePouch INSTANCE = new PacketRequestOpenInterfacePouch();
 
     public static void encode(PacketRequestOpenInterfacePouch packet, FriendlyByteBuf buf) {}
     public static PacketRequestOpenInterfacePouch decode(FriendlyByteBuf buf) { return PacketRequestOpenInterfacePouch.INSTANCE; }
+
+    private PacketRequestOpenInterfacePouch() {}
 
     public static void handle(PacketRequestOpenInterfacePouch packet, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context ctx = ctxSupplier.get();
 
         ctx.enqueueWork(() -> {
-            ServerPlayer sPlayer = ctx.getSender();
-            Optional<ItemStack> equippedPouchMaybe = HelperCompanions.getCompanionPouch(sPlayer);
+            Optional<ServerPlayer> sPlayer = Optional.ofNullable(ctx.getSender());
+            if (sPlayer.isEmpty()) {
+                return;
+            }
+            Optional<ItemStack> equippedPouchMaybe = HelperCompanions.getCompanionPouch(sPlayer.orElseThrow());
 
             if (equippedPouchMaybe.isEmpty() || equippedPouchMaybe.get().isEmpty()) {
                 return;
             }
 
             ItemStack equippedPouch = equippedPouchMaybe.get();
-            byte slotCount = ProviderCapabilityPouchCompanion.getSizeOrDefault(equippedPouch.getOrCreateTag());
+            byte slotCount = (byte) equippedPouch.getCapability(CapabilityDataPouchCompanion.COMPANION_POUCH_CAPABILITY)
+                .map(IDataPouchCompanion::getSize)
+                .orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT)
+                .intValue();
             
-            SimpleMenuProvider provider = MenuInterfacePouchCompanion.getProvider(equippedPouch);
-            NetworkHooks.openGui(sPlayer, provider, buf -> {
+            SimpleMenuProvider provider = MenuInterfacePouchCompanion.getProvider(equippedPouch, Structs.InstanceSide.from(sPlayer.get()));
+            NetworkHooks.openGui(sPlayer.orElseThrow(), provider, buf -> {
                 buf.writeByte(slotCount);
             });
         });

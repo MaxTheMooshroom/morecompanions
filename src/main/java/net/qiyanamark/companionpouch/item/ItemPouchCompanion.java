@@ -24,9 +24,13 @@ import net.minecraftforge.network.NetworkHooks;
 
 import static iskallia.vault.init.ModItems.VAULT_MOD_GROUP;
 
+import net.qiyanamark.companionpouch.ModCompanionPouch;
+import net.qiyanamark.companionpouch.capabilities.IDataPouchCompanion;
+import net.qiyanamark.companionpouch.util.Structs;
+import org.jetbrains.annotations.NotNull;
 import top.theillusivec4.curios.api.SlotContext;
 import top.theillusivec4.curios.api.type.capability.ICurioItem;
-
+import net.qiyanamark.companionpouch.capabilities.CapabilityDataPouchCompanion;
 import net.qiyanamark.companionpouch.capabilities.ProviderCapabilityPouchCompanion;
 import net.qiyanamark.companionpouch.menu.container.MenuInterfacePouchCompanion;
 import net.qiyanamark.companionpouch.menu.container.MenuInventoryPouchCompanion;
@@ -35,7 +39,7 @@ import net.qiyanamark.companionpouch.util.annotations.Implements;
 
 public class ItemPouchCompanion extends Item implements ICurioItem {
     public static final String REL_PATH = "pouch_companion";
-    public static final byte DEFAULT_SLOT_COUNT = 3;
+    public static final int DEFAULT_SLOT_COUNT = 3;
 
     public ItemPouchCompanion() {
         super(new Properties().stacksTo(1).tab(VAULT_MOD_GROUP));
@@ -48,16 +52,18 @@ public class ItemPouchCompanion extends Item implements ICurioItem {
 
         return stack.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY).resolve()
             .map(handler -> IntStream.range(0, handler.getSlots())
-                .mapToObj(i -> handler.getStackInSlot(i))
+                .mapToObj(handler::getStackInSlot)
                 .collect(Collectors.toList()))
             .orElseGet(Collections::emptyList);
     }
 
     @Override
     @Extends(Item.class)
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        byte slotCount = ProviderCapabilityPouchCompanion.getSizeOrDefault(stack.getOrCreateTag());
+        int slotCount = stack.getCapability(CapabilityDataPouchCompanion.COMPANION_POUCH_CAPABILITY)
+            .map(IDataPouchCompanion::getSize)
+            .orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT);
 
         if (player instanceof ServerPlayer sPlayer) {
             if (!sPlayer.isCrouching()) {
@@ -67,11 +73,9 @@ public class ItemPouchCompanion extends Item implements ICurioItem {
                     buf.writeByte(slotCount);
                 });
                 
-            } else {
-                SimpleMenuProvider provider = MenuInterfacePouchCompanion.getProvider(stack);
-                NetworkHooks.openGui(sPlayer, provider, buf -> {
-                    buf.writeByte(slotCount);
-                });
+            } else if (ModCompanionPouch.DEBUG) {
+                SimpleMenuProvider provider = MenuInterfacePouchCompanion.getProvider(stack, Structs.InstanceSide.from(sPlayer));
+                NetworkHooks.openGui(sPlayer, provider, buf -> buf.writeByte(slotCount));
             }
         }
 

@@ -34,7 +34,6 @@ public class CatalogMenu {
     public static final Vec2i MENU_INTERFACE_SLOT_PADDING_LEFT_TOP = new Vec2i(11, 7);
     public static final Vec2i MENU_INTERFACE_SLOT_ACTIVATE_OFFSET = new Vec2i(-4, 21);
     public static final Vec2i MENU_INTERFACE_SLOT_TOGGLE_OFFSET = new Vec2i(2, 47);
-    public static final int MENU_INTERFACE_SLOT_SPACING = 12;
 
     @SubscribeEvent
     public static void registerMenus(RegistryEvent.Register<MenuType<?>> event) {

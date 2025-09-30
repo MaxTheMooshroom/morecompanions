@@ -1,5 +1,6 @@
 package net.qiyanamark.companionpouch.capabilities;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -23,6 +24,7 @@ import iskallia.vault.item.CompanionItem;
 import net.qiyanamark.companionpouch.item.ItemPouchCompanion;
 import net.qiyanamark.companionpouch.util.annotations.Extends;
 import net.qiyanamark.companionpouch.util.annotations.Implements;
+import org.jetbrains.annotations.NotNull;
 
 public class ProviderCapabilityPouchCompanion extends ItemStackHandler implements ICapabilityProvider, IDataPouchCompanion {
     public ProviderCapabilityPouchCompanion(ItemStack stack, @Nullable CompoundTag nbt) {
@@ -35,22 +37,22 @@ public class ProviderCapabilityPouchCompanion extends ItemStackHandler implement
         this.lazy.resolve();
     }
 
-    public static Optional<Byte> getSize(@Nullable CompoundTag nbt) {
+    private static Optional<Integer> getSize(@Nullable CompoundTag nbt) {
         if (nbt != null && nbt.contains(SIZE_KEY)) {
-            return Optional.of(nbt.getByte(SIZE_KEY));
+            return Optional.of((int) nbt.getByte(SIZE_KEY));
         } else {
             return Optional.empty();
         }
     }
 
-    public static byte getSizeOrDefault(@Nullable CompoundTag nbt) {
+    private static int getSizeOrDefault(@Nullable CompoundTag nbt) {
         return ProviderCapabilityPouchCompanion.getSize(nbt).orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     @Implements(ICapabilityProvider.class)
-    public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
+    public <T> @NotNull LazyOptional<T> getCapability(@NotNull Capability<T> cap, Direction side) {
         if (cap == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
             return (LazyOptional<T>) this.lazy;
         } else if (cap == CapabilityDataPouchCompanion.COMPANION_POUCH_CAPABILITY) {
@@ -96,16 +98,21 @@ public class ProviderCapabilityPouchCompanion extends ItemStackHandler implement
     public NonNullList<Pair<Integer, ItemStack>> getCompanions() {
         NonNullList<Pair<Integer, ItemStack>> list = NonNullList.createWithCapacity(this.size);
         IntStream.range(0, this.size)
-            .mapToObj(i -> new Pair<Integer, ItemStack>(i, this.getStackInSlot(i)))
+            .mapToObj(i -> new Pair<>(i, this.getStackInSlot(i)))
             .filter(pair -> !pair.getSecond().isEmpty())
-            .forEach(pair -> list.add(pair));
+            .forEach(list::add);
         return list;
     }
 
     @Override
     @Extends(ItemStackHandler.class)
     protected void onContentsChanged(int slot) {
-        this.save();
+        ItemStack old = this.getStackInSlot(slot);
+        ItemStack newStack = this.stacks.get(slot);
+
+        if (!ItemStack.matches(old, newStack)) {
+            this.save();
+        }
     }
 
     private static final String SIZE_KEY = "size";
@@ -126,7 +133,7 @@ public class ProviderCapabilityPouchCompanion extends ItemStackHandler implement
         CompoundTag stackData = this.stack.getOrCreateTag();
 
         if (nbt.contains(STORAGE_KEY)) {
-            stackData.put(STORAGE_KEY, nbt.get(STORAGE_KEY));
+            stackData.put(STORAGE_KEY, Objects.requireNonNull(nbt.get(STORAGE_KEY)));
         }
 
         int size = nbt.contains(SIZE_KEY) ? nbt.getInt(SIZE_KEY) : 3;
@@ -152,6 +159,7 @@ public class ProviderCapabilityPouchCompanion extends ItemStackHandler implement
     private void save() {
         CompoundTag tag = this.stack.getOrCreateTag();
         tag.put(STORAGE_KEY, this.serializeNBT());
+        tag.putByte(SIZE_KEY, (byte) this.size);
         tag.putByte(ACTIVATE_KEY, (byte) this.activationIndex);
     }
 }

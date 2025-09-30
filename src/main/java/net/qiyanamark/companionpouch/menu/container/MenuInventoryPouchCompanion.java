@@ -15,10 +15,10 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 
 import iskallia.vault.item.CompanionItem;
-
-import net.qiyanamark.companionpouch.capabilities.ProviderCapabilityPouchCompanion;
+import net.qiyanamark.companionpouch.capabilities.CapabilityDataPouchCompanion;
 import net.qiyanamark.companionpouch.catalog.CatalogMenu;
 import net.qiyanamark.companionpouch.helper.HelperInventory;
+import net.qiyanamark.companionpouch.item.ItemPouchCompanion;
 import net.qiyanamark.companionpouch.util.annotations.Extends;
 
 public class MenuInventoryPouchCompanion extends AbstractContainerMenu {
@@ -53,7 +53,10 @@ public class MenuInventoryPouchCompanion extends AbstractContainerMenu {
         return new SimpleMenuProvider(
                 (id, inv, player) -> {
                     ItemStack pouchStack = player.getItemInHand(hand);
-                    byte slotCount = ProviderCapabilityPouchCompanion.getSizeOrDefault(pouchStack.getOrCreateTag());
+                    byte slotCount = (byte) pouchStack.getCapability(CapabilityDataPouchCompanion.COMPANION_POUCH_CAPABILITY)
+                        .map(cap -> cap.getSize())
+                        .orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT)
+                        .intValue();
                     return new MenuInventoryPouchCompanion(id, inv, pouchStack, slotCount);
                 },
                 new TranslatableComponent(SCREEN_I18N)

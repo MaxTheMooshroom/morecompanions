@@ -33,6 +33,7 @@ import static iskallia.vault.init.ModKeybinds.useCompanionTemporal;
 @Mod(ModCompanionPouch.MOD_ID)
 public class ModCompanionPouch {
     public static final String MOD_ID = "companionpouch";
+    public static final boolean DEBUG = false;
 
     public static ResourceLocation rel(String name) {
         return new ResourceLocation(MOD_ID, name);
@@ -56,13 +57,17 @@ public class ModCompanionPouch {
         return Minecraft.getInstance().player;
     }
 
-    public static void messageLocal(TextComponent component) {
+    public static void messageLocalDebug(TextComponent component) {
+        if (!DEBUG) {
+            return;
+        }
+
         LocalPlayer lPlayer = ModCompanionPouch.getClientPlayer();
         lPlayer.sendMessage(component, lPlayer.getUUID());
     }
 
-    public static void messageLocal(String message) {
-        ModCompanionPouch.messageLocal(new TextComponent(message));
+    public static void messageLocalDebug(String message) {
+        ModCompanionPouch.messageLocalDebug(new TextComponent(message));
     }
 
     private static void clientSetup(final FMLClientSetupEvent event) {

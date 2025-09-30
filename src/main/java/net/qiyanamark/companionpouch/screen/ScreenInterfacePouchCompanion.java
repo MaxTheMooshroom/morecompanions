@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.datafixers.util.Pair;
@@ -16,7 +17,9 @@ import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.narration.NarrationSupplier;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
@@ -31,6 +34,7 @@ import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.capabilities.CapabilityDataPouchCompanion;
 import net.qiyanamark.companionpouch.capabilities.IDataPouchCompanion;
 import net.qiyanamark.companionpouch.catalog.CatalogMenu;
+import net.qiyanamark.companionpouch.helper.HelperCompanions;
 import net.qiyanamark.companionpouch.menu.container.MenuInterfacePouchCompanion;
 import net.qiyanamark.companionpouch.network.PacketRequestActivationTemporal;
 import net.qiyanamark.companionpouch.util.CompositeTexture.ComponentTexture;
@@ -39,8 +43,6 @@ import net.qiyanamark.companionpouch.util.annotations.Extends;
 import net.qiyanamark.companionpouch.util.annotations.Implements;
 
 public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuInterfacePouchCompanion> {
-    private final IDataPouchCompanion pouchCap;
-
     public static class IndexedItem<T> extends Pair<Integer, T> {
         public IndexedItem(int index, T item) { super(index, item); }
         public int index() { return this.getFirst(); }
@@ -48,57 +50,81 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
     }
 
     private List<ToggleButton<?>> buttons = new ArrayList<>();
+    private final IDataPouchCompanion pouchCap;
 
     private boolean hoverEnabled = true;
 
-    private static final Predicate<IndexedItem<IDataPouchCompanion>> TOGGLER_PREDICATE = state -> state.index() == state.item().getActivationIndex();
-    private static final Predicate<IndexedItem<Boolean>> ACTIVATOR_PREDICATE = state -> state.item();
+    private static final Predicate<IndexedItem<IDataPouchCompanion>> TOGGLER_PREDICATE = wrapper -> wrapper.index() == wrapper.item().getActivationIndex();
+    private static final Predicate<IndexedItem<Boolean>> ACTIVATOR_PREDICATE = wrapper -> wrapper.item();
 
     public ScreenInterfacePouchCompanion(MenuInterfacePouchCompanion menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
         this.imageWidth = CatalogMenu.SCREEN_INTERFACE_CHROME.getSize().x();
         this.imageHeight = CatalogMenu.SCREEN_INTERFACE_CHROME.getSize().y();
-        
-        ItemStack pouchStack = this.menu.getPouchStack();
-        this.pouchCap = pouchStack.getCapability(CapabilityDataPouchCompanion.COMPANION_POUCH_CAPABILITY).orElseThrow(IllegalStateException::new);
-        int size = this.pouchCap.getSize();
 
-        LocalPlayer lPlayer = Minecraft.getInstance().player;
-        Optional<Vault> vaultMaybe = VaultUtils.getVault(lPlayer.level);
+        this.pouchCap = this.menu.getPouchStack()
+                .getCapability(CapabilityDataPouchCompanion.COMPANION_POUCH_CAPABILITY)
+                .orElseThrow(IllegalStateException::new);
 
-        if (vaultMaybe.isEmpty()) {
-            lPlayer.sendMessage(new TextComponent("not in a vault"), lPlayer.getUUID());
-            // Minecraft.getInstance().setScreen(null);
-            // return;
+        Optional<Vault> vaultMaybe = VaultUtils.getVault(ModCompanionPouch.getClientPlayer().level);
+        if (vaultMaybe.isEmpty() && !ModCompanionPouch.DEBUG) {
+            return;
         }
 
-        // Vault vault = vaultMaybe.get();
-        for (int i = 0; i < size; i++) {
-            Slot slot = this.menu.getSlot(i);
-            Vec2i pos = new Vec2i(this.leftPos + slot.x, this.topPos + slot.y);
+        IntStream.range(0, this.pouchCap.getSize())
+                .mapToObj(i -> new Pair<>(i, this.menu.getSlot(i)))
+                .filter(pair -> pair.getSecond().hasItem())
+                .forEach(pair -> {
+                    int i = pair.getFirst();
+                    Slot slot = pair.getSecond();
 
-            // activators
-            Vec2i activatorPos = CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET.add(pos);
-            this.buttons.add(new ToggleButton<>(
-                activatorPos.x(), activatorPos.y(),
-                new IndexedItem<>(i, true),
-                ACTIVATOR_STATE_0, ACTIVATOR_STATE_1, ACTIVATOR_PREDICATE
-            ));
+                    boolean canUseTemporal = HelperCompanions.companionCanUseTemporalInVault(slot.getItem(), vaultMaybe);
 
-            // togglers
-            Vec2i togglePos = CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET.add(pos);
-            this.buttons.add(new ToggleButton<>(
-                togglePos.x(), togglePos.y(),
-                new IndexedItem<>(i, this.pouchCap),
-                TOGGLER_INDEX_0, TOGGLER_INDEX_1, TOGGLER_PREDICATE
-            ));
-        }
+                    this.buttons.add(new ToggleButton<>(
+                        0, 0,
+                        new IndexedItem<>(i, canUseTemporal),
+                        ACTIVATOR_STATE_0, ACTIVATOR_STATE_1, ACTIVATOR_PREDICATE
+                    ));
+                    this.buttons.add(new ToggleButton<>(
+                        0, 0,
+                        new IndexedItem<>(i, this.pouchCap),
+                        TOGGLER_INDEX_0, TOGGLER_INDEX_1, TOGGLER_PREDICATE
+                    ));
+                });
+    }
+
+    @Override
+    @Extends(AbstractContainerScreen.class)
+//    @SuppressWarnings("unchecked")
+    protected void init() {
+        super.init();
+
+        Optional<Vault> vaultMaybe = VaultUtils.getVault(ModCompanionPouch.getClientPlayer().level);
+        Vec2i offset = new Vec2i(this.leftPos, this.topPos);
+
+        this.buttons.stream()
+                .map(button -> (ToggleButton<IndexedItem<?>>) button)
+                .forEach(button -> {
+                    int i = button.state.index();
+                    Slot slot = this.menu.slots.get(i);
+
+                    boolean canUseTemporal = HelperCompanions.companionCanUseTemporalInVault(slot.getItem(), vaultMaybe);
+                    Vec2i slotPosCanonical = new Vec2i(slot.x, slot.y);
+                    Vec2i pos = slotPosCanonical.add(offset);
+
+                    Vec2i buttonOffset = button.state.getSecond() instanceof Boolean
+                            ? CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET
+                            : CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET;
+
+                    Vec2i newPos = buttonOffset.add(pos);
+                    button.x = newPos.x();
+                    button.y = newPos.y();
+                });
     }
 
     @Override
     @Implements(value = ContainerEventHandler.class, introducedBy = AbstractContainerEventHandler.class)
     public boolean mouseClicked(double pMouseX, double pMouseY, int pButton) {
-        ModCompanionPouch.messageLocal("clicked");
         for (ToggleButton<?> button : this.buttons) {
             if (button.isActive() && button.cursorInBounds(pMouseX, pMouseY)) {
                 button.onPress();
@@ -119,7 +145,7 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
     public void renderTooltip(PoseStack poseStack, int mouseX, int mouseY) {
         for (ToggleButton<?> button : this.buttons) {
             if (button.cursorInBounds(mouseX, mouseY)) {
-                button.drawTooltip(poseStack, mouseX, mouseY);
+                button.drawTooltip(this, poseStack, mouseX, mouseY);
             }
         }
         for (Slot slot : this.menu.slots) {
@@ -215,8 +241,8 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
             return this.checkPredicate() ? this.dataOn : this.dataOff;
         }
 
-        public void drawTooltip(PoseStack poseStack, int mouseX, int mouseY) {
-            this.getData().onTooltip.draw(this, poseStack, mouseX, mouseY);
+        public void drawTooltip(ScreenInterfacePouchCompanion screen, PoseStack poseStack, int mouseX, int mouseY) {
+            this.getData().onTooltip.draw(screen, this, poseStack, mouseX, mouseY);
         }
 
         public State getState() {
@@ -233,7 +259,7 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
 
         @FunctionalInterface
         public static interface OnTooltip<State> {
-            void draw(ToggleButton<State> button, PoseStack poseStack, int mouseX, int mouseY);
+            void draw(ScreenInterfacePouchCompanion screen, ToggleButton<State> button, PoseStack poseStack, int mouseX, int mouseY);
         }
 
         @FunctionalInterface
@@ -254,26 +280,22 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
             }
         }
 
-        private static final OnTooltip<?> DEFAULT_ON_TOOLTIP = (button, poseStack, mouseX, mouseY) -> {
-            Font font = Minecraft.getInstance().font;
-            int x = mouseX + 12;
-            int y = mouseY - 12;
-            font.drawShadow(poseStack, new TextComponent(button.getData().label), x, y, 0xFFFFFF);
+        private static final OnTooltip<?> DEFAULT_ON_TOOLTIP = (screen, button, poseStack, mouseX, mouseY) -> {
+            String label = button.getData().label;
+            if (label != null && label != "") {
+                TextComponent component = new TextComponent(label);
+                screen.renderTooltip(poseStack, List.of(component), Optional.empty(), mouseX, mouseY);
+            }
         };
     }
 
     private static void onActivatorClick(ToggleButton<IndexedItem<Boolean>> button) {
-        ModCompanionPouch.messageLocal("Activator clicked");
-
-        IndexedItem<Boolean> pair = button.getState();
-        int idx = pair.getFirst();
-        PacketRequestActivationTemporal.sendToServer(idx);
-        button.setState(new IndexedItem<>(idx, !pair.item()));
+        IndexedItem<Boolean> wrapped = button.getState();
+        PacketRequestActivationTemporal.sendToServer(wrapped.index());
+        button.setState(new IndexedItem<>(wrapped.index(), false));
     }
 
     private static void onTogglerClick(ToggleButton<IndexedItem<IDataPouchCompanion>> button) {
-        ModCompanionPouch.messageLocal("Toggler clicked");
-
         IndexedItem<IDataPouchCompanion> pair = button.getState();
         pair.item().setActivationIndex(pair.index());
     }

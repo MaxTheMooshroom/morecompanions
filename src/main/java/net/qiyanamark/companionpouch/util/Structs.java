@@ -1,5 +1,8 @@
 package net.qiyanamark.companionpouch.util;
 
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
+
 import java.util.Optional;
 
 public class Structs {
@@ -55,6 +58,11 @@ public class Structs {
         public Vec2i div(int d) {
             return new Vec2i(this.x / d, this.y / d);
         }
+
+        @Override
+        public String toString() {
+            return "Vec2i<" + this.x + ", " + this.y + ">";
+        }
     }
 
     public static record Vec4(int r, int g, int b, int a) {
@@ -81,6 +89,20 @@ public class Structs {
 
         public Vertex2D copy() {
             return new Vertex2D(this.pos.copy(), this.color.map(c -> c.copy()), this.uv.map(uv -> uv.copy()));
+        }
+    }
+
+    public static enum InstanceSide {
+        CLIENT,
+        SERVER;
+
+        @Override
+        public String toString() {
+            return this == CLIENT ? "CLIENT" : "SERVER";
+        }
+
+        public static <E extends Entity> InstanceSide from(E entity) {
+            return entity.level.isClientSide ? CLIENT : SERVER;
         }
     }
 }
