@@ -23,10 +23,6 @@ public class ScreenInventoryPouchCompanion extends AbstractContainerScreen<MenuI
         this.imageHeight = CatalogMenu.SCREEN_INVENTORY_CHROME.getSize().y();
     }
 
-    public static Vec2i getSize() {
-        return CatalogMenu.SCREEN_INVENTORY_CHROME.getSize().copy();
-    }
-
     protected void renderChrome(PoseStack poseStack) {
         CatalogMenu.SCREEN_INVENTORY_CHROME.blitSlow(poseStack, this.leftPos, this.topPos);
     }

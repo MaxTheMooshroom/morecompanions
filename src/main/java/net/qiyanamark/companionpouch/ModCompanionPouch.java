@@ -1,5 +1,8 @@
 package net.qiyanamark.companionpouch;
 
+import iskallia.vault.core.vault.VaultUtils;
+import net.qiyanamark.companionpouch.network.PacketRequestOpenInventoryPouch;
+import net.qiyanamark.companionpouch.util.Structs;
 import org.lwjgl.glfw.GLFW;
 
 import com.mojang.blaze3d.platform.InputConstants;
@@ -33,7 +36,7 @@ import static iskallia.vault.init.ModKeybinds.useCompanionTemporal;
 @Mod(ModCompanionPouch.MOD_ID)
 public class ModCompanionPouch {
     public static final String MOD_ID = "companionpouch";
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG = true;
 
     public static ResourceLocation rel(String name) {
         return new ResourceLocation(MOD_ID, name);
@@ -63,7 +66,9 @@ public class ModCompanionPouch {
         }
 
         LocalPlayer lPlayer = ModCompanionPouch.getClientPlayer();
-        lPlayer.sendMessage(component, lPlayer.getUUID());
+        if (lPlayer != null) {
+            lPlayer.sendMessage(component, lPlayer.getUUID());
+        }
     }
 
     public static void messageLocalDebug(String message) {
@@ -91,18 +96,22 @@ public class ModCompanionPouch {
                 HandlerInput.onKeyRelease(key);
                 return;
             case GLFW.GLFW_REPEAT:
-                return;
             }
         }
 
         private static void onKeyPress(InputConstants.Key key) {
             if (useCompanionTemporal.isActiveAndMatches(key)) {
-                HelperCompanions.getCompanionPouch(ModCompanionPouch.getClientPlayer())
+                LocalPlayer lPlayer = ModCompanionPouch.getClientPlayer();
+                Structs.LocationPouch.findOnPlayer(lPlayer)
                     .ifPresent(pouchStack -> {
-                        if (ModCompanionPouch.getClientPlayer().isCrouching()) {
-                            PacketRequestOpenInterfacePouch.sendToServer();
+                        if (VaultUtils.getVault(lPlayer.level).isPresent()) {
+                            if (lPlayer.isCrouching()) {
+                                PacketRequestOpenInterfacePouch.sendToServer();
+                            } else {
+                                PacketRequestActivationTemporal.sendToServer((byte) -1); // use pouch setting
+                            }
                         } else {
-                            PacketRequestActivationTemporal.sendToServer(-1); // use pouch setting
+                            PacketRequestOpenInventoryPouch.sendToServer();
                         }
                     });
             }

@@ -16,6 +16,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.network.PacketRequestActivationTemporal;
 import net.qiyanamark.companionpouch.network.PacketRequestOpenInterfacePouch;
+import net.qiyanamark.companionpouch.network.PacketRequestOpenInventoryPouch;
 
 public class CatalogNetwork {
     private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -27,6 +28,7 @@ public class CatalogNetwork {
 
     public static void register() {
         registerMessage("1", PacketRequestOpenInterfacePouch.class, PacketRequestOpenInterfacePouch::encode, PacketRequestOpenInterfacePouch::decode, PacketRequestOpenInterfacePouch::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        registerMessage("1", PacketRequestOpenInventoryPouch.class, PacketRequestOpenInventoryPouch::encode, PacketRequestOpenInventoryPouch::decode, PacketRequestOpenInventoryPouch::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         registerMessage("1", PacketRequestActivationTemporal.class, PacketRequestActivationTemporal::encode, PacketRequestActivationTemporal::decode, PacketRequestActivationTemporal::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
     }
 
