@@ -22,7 +22,7 @@ public class CatalogMenu {
     public static final CompositeTexture TEXTURE_ATLAS_MENUS_POUCH = new CompositeTexture("textures/gui/container/pouch_companion.png");
 
     public static final ComponentTexture SCREEN_INVENTORY_CHROME = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(0, 0), new Vec2i(174, 163));
-    public static final ComponentTexture SCREEN_INTERFACE_CHROME = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(0, 166), new Vec2i(96, 64));
+    public static final ComponentTexture SCREEN_INTERFACE_CHROME = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(0, 166), new Vec2i(128, 64));
 
     public static final ComponentTexture ACTIVATE_READY = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(176, 28), new Vec2i(24, 24));
     public static final ComponentTexture ACTIVATE_RESTING = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(204, 28), new Vec2i(24, 24));
@@ -31,7 +31,7 @@ public class CatalogMenu {
     public static final ComponentTexture TOGGLER_OFF = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(176, 61), new Vec2i(12, 5));
 
     public static final ComponentTexture MENU_SLOT = TEXTURE_ATLAS_MENUS_POUCH.getComponentTexture(new Vec2i(192, 54), new Vec2i(18, 18));
-    public static final Vec2i MENU_INTERFACE_SLOT_PADDING_LEFT_TOP = new Vec2i(11, 7);
+    public static final Vec2i MENU_INTERFACE_SLOT_PADDING_LEFT_TOP = new Vec2i(18, 7);
     public static final Vec2i MENU_INTERFACE_SLOT_ACTIVATE_OFFSET = new Vec2i(-4, 21);
     public static final Vec2i MENU_INTERFACE_SLOT_TOGGLE_OFFSET = new Vec2i(2, 47);
 

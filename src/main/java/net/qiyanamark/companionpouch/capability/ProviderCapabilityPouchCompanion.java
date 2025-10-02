@@ -118,7 +118,7 @@ public class ProviderCapabilityPouchCompanion implements ICapabilityProvider, IN
             if (0 <= index && index < this.getSlots()) {
                 this.activationIndex = index;
                 this.pouchStack.getOrCreateTag().putByte(ACTIVATE_KEY, this.activationIndex);
-                ModCompanionPouch.messageLocalDebug("Set activation index to " + this.pouchStack.getOrCreateTag().getByte(ACTIVATE_KEY));
+//                ModCompanionPouch.Debug.messageLocal("Set activation index to " + this.pouchStack.getOrCreateTag().getByte(ACTIVATE_KEY));
             }
         }
 
