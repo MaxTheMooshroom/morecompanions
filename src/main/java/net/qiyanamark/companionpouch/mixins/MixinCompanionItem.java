@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import top.theillusivec4.curios.api.CuriosApi;
 
 import iskallia.vault.item.CompanionItem;
+import top.theillusivec4.curios.api.SlotResult;
 
 @Mixin(value = CompanionItem.class, remap = false)
 public abstract class MixinCompanionItem {
@@ -30,7 +31,7 @@ public abstract class MixinCompanionItem {
 
         Optional<ItemStack> result = CuriosApi.getCuriosHelper()
             .findFirstCurio(entity, slot -> slot.getItem() instanceof CompanionItem)
-            .map(slot -> slot.stack());
+            .map(SlotResult::stack);
 
         cir.setReturnValue(result);
         cir.cancel();

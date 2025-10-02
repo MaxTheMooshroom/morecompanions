@@ -9,38 +9,35 @@ import java.util.stream.IntStream;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.datafixers.util.Pair;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.narration.NarrationSupplier;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
 
 import iskallia.vault.core.vault.Vault;
 import iskallia.vault.core.vault.VaultUtils;
 
+import net.minecraft.world.item.ItemStack;
 import net.qiyanamark.companionpouch.ModCompanionPouch;
-import net.qiyanamark.companionpouch.capabilities.CapabilityDataPouchCompanion;
-import net.qiyanamark.companionpouch.capabilities.IDataPouchCompanion;
+import net.qiyanamark.companionpouch.capability.CapabilityPouchCompanion;
+import net.qiyanamark.companionpouch.capability.IDataPouchCompanion;
 import net.qiyanamark.companionpouch.catalog.CatalogMenu;
 import net.qiyanamark.companionpouch.helper.HelperCompanions;
 import net.qiyanamark.companionpouch.menu.container.MenuInterfacePouchCompanion;
 import net.qiyanamark.companionpouch.network.PacketRequestActivationTemporal;
 import net.qiyanamark.companionpouch.util.CompositeTexture.ComponentTexture;
+import net.qiyanamark.companionpouch.util.Structs;
 import net.qiyanamark.companionpouch.util.Structs.Vec2i;
 import net.qiyanamark.companionpouch.util.annotations.Extends;
 import net.qiyanamark.companionpouch.util.annotations.Implements;
+import org.jetbrains.annotations.NotNull;
 
 public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuInterfacePouchCompanion> {
     public static class IndexedItem<T> extends Pair<Integer, T> {
@@ -49,29 +46,31 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
         public T item() { return this.getSecond(); }
     }
 
-    private List<ToggleButton<?>> buttons = new ArrayList<>();
-    private final IDataPouchCompanion pouchCap;
+    private final List<ToggleButton<?>> buttons = new ArrayList<>();
+    private final Structs.CapabilityWrapper<IDataPouchCompanion, ItemStack> pouchCap;
 
     private boolean hoverEnabled = true;
 
-    private static final Predicate<IndexedItem<IDataPouchCompanion>> TOGGLER_PREDICATE = wrapper -> wrapper.index() == wrapper.item().getActivationIndex();
-    private static final Predicate<IndexedItem<Boolean>> ACTIVATOR_PREDICATE = wrapper -> wrapper.item();
+    private static final Predicate<IndexedItem<Structs.CapabilityWrapper<IDataPouchCompanion, ItemStack>>> TOGGLER_PREDICATE =
+            wrapper -> wrapper.index() == wrapper.item().get().getActivationIndex();
+    private static final Predicate<IndexedItem<Boolean>> ACTIVATOR_PREDICATE = IndexedItem::item;
 
     public ScreenInterfacePouchCompanion(MenuInterfacePouchCompanion menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
         this.imageWidth = CatalogMenu.SCREEN_INTERFACE_CHROME.getSize().x();
         this.imageHeight = CatalogMenu.SCREEN_INTERFACE_CHROME.getSize().y();
 
-        this.pouchCap = this.menu.getPouchStack()
-                .getCapability(CapabilityDataPouchCompanion.COMPANION_POUCH_CAPABILITY)
-                .orElseThrow(IllegalStateException::new);
+        this.pouchCap = new Structs.CapabilityWrapper<>(
+                this.menu.getPouchStack(),
+                stack -> stack.getCapability(CapabilityPouchCompanion.COMPANION_POUCH_CAPABILITY)
+        );
 
         Optional<Vault> vaultMaybe = VaultUtils.getVault(ModCompanionPouch.getClientPlayer().level);
         if (vaultMaybe.isEmpty() && !ModCompanionPouch.DEBUG) {
             return;
         }
 
-        IntStream.range(0, this.pouchCap.getSize())
+        IntStream.range(0, this.pouchCap.get().getSlots())
                 .mapToObj(i -> new Pair<>(i, this.menu.getSlot(i)))
                 .filter(pair -> pair.getSecond().hasItem())
                 .forEach(pair -> {
@@ -81,21 +80,21 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
                     boolean canUseTemporal = HelperCompanions.companionCanUseTemporalInVault(slot.getItem(), vaultMaybe);
 
                     this.buttons.add(new ToggleButton<>(
-                        0, 0,
-                        new IndexedItem<>(i, canUseTemporal),
-                        ACTIVATOR_STATE_0, ACTIVATOR_STATE_1, ACTIVATOR_PREDICATE
+                            0, 0,
+                            new IndexedItem<>(i, canUseTemporal),
+                            ACTIVATOR_STATE_0, ACTIVATOR_STATE_1, ACTIVATOR_PREDICATE
                     ));
                     this.buttons.add(new ToggleButton<>(
-                        0, 0,
-                        new IndexedItem<>(i, this.pouchCap),
-                        TOGGLER_INDEX_0, TOGGLER_INDEX_1, TOGGLER_PREDICATE
+                            0, 0,
+                            new IndexedItem<>(i, this.pouchCap),
+                            TOGGLER_INDEX_0, TOGGLER_INDEX_1, TOGGLER_PREDICATE
                     ));
                 });
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     @Extends(AbstractContainerScreen.class)
-//    @SuppressWarnings("unchecked")
     protected void init() {
         super.init();
 
@@ -108,13 +107,16 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
                     int i = button.state.index();
                     Slot slot = this.menu.slots.get(i);
 
-                    boolean canUseTemporal = HelperCompanions.companionCanUseTemporalInVault(slot.getItem(), vaultMaybe);
                     Vec2i slotPosCanonical = new Vec2i(slot.x, slot.y);
                     Vec2i pos = slotPosCanonical.add(offset);
 
-                    Vec2i buttonOffset = button.state.getSecond() instanceof Boolean
-                            ? CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET
-                            : CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET;
+                    Vec2i buttonOffset = CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET;
+                    if (button.state.item() instanceof Boolean) {
+                        buttonOffset = CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET;
+
+                        boolean canUseTemporal = HelperCompanions.companionCanUseTemporalInVault(slot.getItem(), vaultMaybe);
+                        ((ToggleButton<IndexedItem<Boolean>>) (Object) button).setState(new IndexedItem<>(i, canUseTemporal));
+                    }
 
                     Vec2i newPos = buttonOffset.add(pos);
                     button.x = newPos.x();
@@ -142,7 +144,7 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
 
     @Override
     @Extends(AbstractContainerScreen.class)
-    public void renderTooltip(PoseStack poseStack, int mouseX, int mouseY) {
+    public void renderTooltip(@NotNull PoseStack poseStack, int mouseX, int mouseY) {
         for (ToggleButton<?> button : this.buttons) {
             if (button.cursorInBounds(mouseX, mouseY)) {
                 button.drawTooltip(this, poseStack, mouseX, mouseY);
@@ -158,7 +160,7 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
 
     @Override
     @Extends(AbstractContainerScreen.class)
-    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
+    public void render(@NotNull PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
         this.renderBackground(poseStack);
 
         this.hoverEnabled = false;
@@ -186,7 +188,7 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
 
     @Override
     @Extends(AbstractContainerScreen.class)
-    protected void renderBg(PoseStack poseStack, float pPartialTick, int pMouseX, int pMouseY) {
+    protected void renderBg(@NotNull PoseStack poseStack, float pPartialTick, int pMouseX, int pMouseY) {
         CatalogMenu.TEXTURE_ATLAS_MENUS_POUCH.prepareSlow();
 
         this.renderChrome(poseStack);
@@ -195,11 +197,11 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
 
     @Override
     @Extends(AbstractContainerScreen.class)
-    protected void renderLabels(PoseStack poseStack, int mouseX, int mouseY) {
+    protected void renderLabels(@NotNull PoseStack poseStack, int mouseX, int mouseY) {
         // don't render labels
     }
 
-    public class ToggleButton<State> extends AbstractButton {
+    public static class ToggleButton<State> extends AbstractButton {
         protected static final TextComponent EMPTY = new TextComponent("");
         protected final ButtonData<State> dataOn;
         protected final ButtonData<State> dataOff;
@@ -216,14 +218,14 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
 
         @Override
         @Extends(AbstractWidget.class)
-        public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+        public void renderButton(@NotNull PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
             ButtonData<State> toBlit = this.checkPredicate() ? this.dataOn : this.dataOff;
             toBlit.texture.blitSlow(poseStack, this.x, this.y);
         }
 
         @Override
         @Implements(NarrationSupplier.class)
-        public void updateNarration(NarrationElementOutput pNarrationElementOutput) {
+        public void updateNarration(@NotNull NarrationElementOutput pNarrationElementOutput) {
             this.defaultButtonNarrationText(pNarrationElementOutput);
         }
 
@@ -258,16 +260,16 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
         }
 
         @FunctionalInterface
-        public static interface OnTooltip<State> {
+        public interface OnTooltip<State> {
             void draw(ScreenInterfacePouchCompanion screen, ToggleButton<State> button, PoseStack poseStack, int mouseX, int mouseY);
         }
 
         @FunctionalInterface
-        public static interface OnClick<State> {
+        public interface OnClick<State> {
             void click(ToggleButton<State> button);
         }
 
-        public static record ButtonData<State>(
+        public record ButtonData<State>(
             String label,
             ComponentTexture texture,
             OnClick<State> onClick,
@@ -276,13 +278,13 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
         ) {
             @SuppressWarnings("unchecked")
             public static <T> ButtonData<T> of(String label, ComponentTexture texture, OnClick<?> onClick, OnTooltip<?> onTooltip, Predicate<?> predicate) {
-                return new ButtonData<T>(label, texture, (OnClick<T>) onClick, (OnTooltip<T>) onTooltip, (Predicate<T>) predicate);
+                return new ButtonData<>(label, texture, (OnClick<T>) onClick, (OnTooltip<T>) onTooltip, (Predicate<T>) predicate);
             }
         }
 
         private static final OnTooltip<?> DEFAULT_ON_TOOLTIP = (screen, button, poseStack, mouseX, mouseY) -> {
             String label = button.getData().label;
-            if (label != null && label != "") {
+            if (label != null && !label.isEmpty()) {
                 TextComponent component = new TextComponent(label);
                 screen.renderTooltip(poseStack, List.of(component), Optional.empty(), mouseX, mouseY);
             }
@@ -291,13 +293,13 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
 
     private static void onActivatorClick(ToggleButton<IndexedItem<Boolean>> button) {
         IndexedItem<Boolean> wrapped = button.getState();
-        PacketRequestActivationTemporal.sendToServer(wrapped.index());
+        PacketRequestActivationTemporal.sendToServer((byte) wrapped.index());
         button.setState(new IndexedItem<>(wrapped.index(), false));
     }
 
-    private static void onTogglerClick(ToggleButton<IndexedItem<IDataPouchCompanion>> button) {
-        IndexedItem<IDataPouchCompanion> pair = button.getState();
-        pair.item().setActivationIndex(pair.index());
+    private static void onTogglerClick(ToggleButton<IndexedItem<Structs.CapabilityWrapper<IDataPouchCompanion, ItemStack>>> button) {
+        IndexedItem<Structs.CapabilityWrapper<IDataPouchCompanion, ItemStack>> pair = button.getState();
+        pair.item().get().setActivationIndex((byte) pair.index());
     }
 
     private static final ToggleButton.ButtonData<IndexedItem<Boolean>> ACTIVATOR_STATE_0 = ToggleButton.ButtonData.<IndexedItem<Boolean>>of(
@@ -305,7 +307,7 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
         CatalogMenu.ACTIVATE_READY,
         (ToggleButton.OnClick<? extends IndexedItem<Boolean>>) ScreenInterfacePouchCompanion::onActivatorClick,
         ToggleButton.DEFAULT_ON_TOOLTIP,
-        (Predicate<? extends IndexedItem<Boolean>>) state -> state.getSecond()
+        (Predicate<? extends IndexedItem<Boolean>>) Pair::getSecond
     );
 
     private static final ToggleButton.ButtonData<IndexedItem<Boolean>> ACTIVATOR_STATE_1 = ToggleButton.ButtonData.<IndexedItem<Boolean>>of(
@@ -316,19 +318,19 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
         (Predicate<? extends IndexedItem<Boolean>>) state -> !state.getSecond()
     );
 
-    private static final ToggleButton.ButtonData<IndexedItem<IDataPouchCompanion>> TOGGLER_INDEX_0 = ToggleButton.ButtonData.<IndexedItem<IDataPouchCompanion>>of(
+    private static final ToggleButton.ButtonData<IndexedItem<Structs.CapabilityWrapper<IDataPouchCompanion, ItemStack>>> TOGGLER_INDEX_0 = ToggleButton.ButtonData.of(
         "",
         CatalogMenu.TOGGLER_ON,
-        (ToggleButton.OnClick<? extends IndexedItem<IDataPouchCompanion>>) ScreenInterfacePouchCompanion::onTogglerClick,
+        (ToggleButton.OnClick<? extends IndexedItem<Structs.CapabilityWrapper<IDataPouchCompanion, ItemStack>>>) ScreenInterfacePouchCompanion::onTogglerClick,
         ToggleButton.DEFAULT_ON_TOOLTIP,
-        (Predicate<? extends IndexedItem<IDataPouchCompanion>>) state -> state.getFirst() == state.getSecond().getActivationIndex()
+        (Predicate<? extends IndexedItem<Structs.CapabilityWrapper<IDataPouchCompanion, ItemStack>>>) state -> state.getFirst() == state.getSecond().get().getActivationIndex()
     );
 
-    private static final ToggleButton.ButtonData<IndexedItem<IDataPouchCompanion>> TOGGLER_INDEX_1 = ToggleButton.ButtonData.<IndexedItem<IDataPouchCompanion>>of(
+    private static final ToggleButton.ButtonData<IndexedItem<Structs.CapabilityWrapper<IDataPouchCompanion, ItemStack>>> TOGGLER_INDEX_1 = ToggleButton.ButtonData.of(
         "Use this companion's temporal when using the hotkey",
         CatalogMenu.TOGGLER_OFF,
-        (ToggleButton.OnClick<? extends IndexedItem<IDataPouchCompanion>>) ScreenInterfacePouchCompanion::onTogglerClick,
+        (ToggleButton.OnClick<? extends IndexedItem<Structs.CapabilityWrapper<IDataPouchCompanion, ItemStack>>>) ScreenInterfacePouchCompanion::onTogglerClick,
         ToggleButton.DEFAULT_ON_TOOLTIP,
-        (Predicate<? extends IndexedItem<IDataPouchCompanion>>) state -> state.getFirst() != state.getSecond().getActivationIndex()
+        (Predicate<? extends IndexedItem<Structs.CapabilityWrapper<IDataPouchCompanion, ItemStack>>>) state -> state.getFirst() != state.getSecond().get().getActivationIndex()
     );
 }

@@ -39,33 +39,6 @@ public class HelperCompanions {
             .orElseGet(Collections::emptyList);
     }
 
-    public static Optional<ItemStack> getCompanionPouch(LivingEntity entity) {
-        if (entity.isSpectator()) {
-            return Optional.empty();
-        }
-
-        return CuriosApi.getCuriosHelper()
-            .findFirstCurio(entity, stack -> stack.getItem() == CatalogItem.COMPANION_POUCH.get())
-            .map(SlotResult::stack)
-            .or(() -> {
-                if (!(entity instanceof ServerPlayer sPlayer)) {
-                    return Optional.empty();
-                }
-
-                ItemStack handStack = sPlayer.getMainHandItem();
-                if (handStack != null && !handStack.isEmpty()) {
-                    return Optional.of(handStack);
-                }
-
-                handStack = sPlayer.getOffhandItem();
-                if (handStack != null && !handStack.isEmpty()) {
-                    return Optional.of(handStack);
-                }
-
-                return Optional.empty();
-            });
-    }
-
     public static boolean companionCanUseTemporalInVault(ItemStack companionStack, @NonNull Optional<Vault> vault) {
         if (companionStack == null || vault.isEmpty()) {
             return false;

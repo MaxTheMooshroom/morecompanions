@@ -1,5 +1,9 @@
 package net.qiyanamark.companionpouch;
 
+import iskallia.vault.core.vault.VaultUtils;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.qiyanamark.companionpouch.network.PacketRequestOpenInventoryPouch;
+import net.qiyanamark.companionpouch.util.Structs;
 import org.lwjgl.glfw.GLFW;
 
 import com.mojang.blaze3d.platform.InputConstants;
@@ -57,19 +61,6 @@ public class ModCompanionPouch {
         return Minecraft.getInstance().player;
     }
 
-    public static void messageLocalDebug(TextComponent component) {
-        if (!DEBUG) {
-            return;
-        }
-
-        LocalPlayer lPlayer = ModCompanionPouch.getClientPlayer();
-        lPlayer.sendMessage(component, lPlayer.getUUID());
-    }
-
-    public static void messageLocalDebug(String message) {
-        ModCompanionPouch.messageLocalDebug(new TextComponent(message));
-    }
-
     private static void clientSetup(final FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             MenuScreens.register(CatalogMenu.COMPANION_POUCH_INVENTORY, ScreenInventoryPouchCompanion::new);
@@ -91,23 +82,45 @@ public class ModCompanionPouch {
                 HandlerInput.onKeyRelease(key);
                 return;
             case GLFW.GLFW_REPEAT:
-                return;
             }
         }
 
         private static void onKeyPress(InputConstants.Key key) {
             if (useCompanionTemporal.isActiveAndMatches(key)) {
-                HelperCompanions.getCompanionPouch(ModCompanionPouch.getClientPlayer())
+                LocalPlayer lPlayer = ModCompanionPouch.getClientPlayer();
+                Structs.LocationPouch.findOnPlayer(lPlayer)
                     .ifPresent(pouchStack -> {
-                        if (ModCompanionPouch.getClientPlayer().isCrouching()) {
-                            PacketRequestOpenInterfacePouch.sendToServer();
+                        if (VaultUtils.getVault(lPlayer.level).isPresent()) {
+                            if (lPlayer.isCrouching()) {
+                                PacketRequestOpenInterfacePouch.sendToServer();
+                            } else {
+                                PacketRequestActivationTemporal.sendToServer((byte) -1); // use pouch setting
+                            }
                         } else {
-                            PacketRequestActivationTemporal.sendToServer(-1); // use pouch setting
+                            PacketRequestOpenInventoryPouch.sendToServer();
                         }
                     });
             }
         }
 
         private static void onKeyRelease(InputConstants.Key key) {}
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static class Debug {
+        public static void messageLocal(TextComponent component) {
+            if (!DEBUG) {
+                return;
+            }
+
+            LocalPlayer lPlayer = ModCompanionPouch.getClientPlayer();
+            if (lPlayer != null) {
+                lPlayer.sendMessage(component, lPlayer.getUUID());
+            }
+        }
+
+        public static void messageLocal(String message) {
+            Debug.messageLocal(new TextComponent(message));
+        }
     }
 }

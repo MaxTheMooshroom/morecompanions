@@ -7,15 +7,20 @@ import java.util.stream.IntStream;
 
 import javax.annotation.Nullable;
 
+import iskallia.vault.item.CompanionItem;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.extensions.IForgeItem;
@@ -25,13 +30,13 @@ import net.minecraftforge.network.NetworkHooks;
 import static iskallia.vault.init.ModItems.VAULT_MOD_GROUP;
 
 import net.qiyanamark.companionpouch.ModCompanionPouch;
-import net.qiyanamark.companionpouch.capabilities.IDataPouchCompanion;
+import net.qiyanamark.companionpouch.capability.IDataPouchCompanion;
 import net.qiyanamark.companionpouch.util.Structs;
 import org.jetbrains.annotations.NotNull;
 import top.theillusivec4.curios.api.SlotContext;
 import top.theillusivec4.curios.api.type.capability.ICurioItem;
-import net.qiyanamark.companionpouch.capabilities.CapabilityDataPouchCompanion;
-import net.qiyanamark.companionpouch.capabilities.ProviderCapabilityPouchCompanion;
+import net.qiyanamark.companionpouch.capability.CapabilityPouchCompanion;
+import net.qiyanamark.companionpouch.capability.ProviderCapabilityPouchCompanion;
 import net.qiyanamark.companionpouch.menu.container.MenuInterfacePouchCompanion;
 import net.qiyanamark.companionpouch.menu.container.MenuInventoryPouchCompanion;
 import net.qiyanamark.companionpouch.util.annotations.Extends;
@@ -54,32 +59,43 @@ public class ItemPouchCompanion extends Item implements ICurioItem {
             .map(handler -> IntStream.range(0, handler.getSlots())
                 .mapToObj(handler::getStackInSlot)
                 .collect(Collectors.toList()))
-            .orElseGet(Collections::emptyList);
+                .orElseGet(Collections::emptyList);
     }
 
     @Override
     @Extends(Item.class)
     public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
-        ItemStack stack = player.getItemInHand(hand);
-        int slotCount = stack.getCapability(CapabilityDataPouchCompanion.COMPANION_POUCH_CAPABILITY)
-            .map(IDataPouchCompanion::getSize)
-            .orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT);
+        ItemStack pouchStack = player.getItemInHand(hand);
 
+        boolean success = false;
         if (player instanceof ServerPlayer sPlayer) {
+            int slotCount = pouchStack.getCapability(CapabilityPouchCompanion.COMPANION_POUCH_CAPABILITY)
+                    .map(IDataPouchCompanion::getSlots)
+                    .orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT);
+            Structs.LocationPouch location = Structs.LocationPouch.fromHand(hand);
+
             if (!sPlayer.isCrouching()) {
-                SimpleMenuProvider provider = MenuInventoryPouchCompanion.getProvider(hand);
+                SimpleMenuProvider provider = MenuInventoryPouchCompanion.getProvider(pouchStack, slotCount);
                 NetworkHooks.openGui(sPlayer, provider, buf -> {
-                    buf.writeBoolean(hand == InteractionHand.MAIN_HAND);
+                    location.writeByte(buf);
                     buf.writeByte(slotCount);
                 });
+                success = true;
                 
             } else if (ModCompanionPouch.DEBUG) {
-                SimpleMenuProvider provider = MenuInterfacePouchCompanion.getProvider(stack, Structs.InstanceSide.from(sPlayer));
+                SimpleMenuProvider provider = MenuInterfacePouchCompanion.getProvider(pouchStack, Structs.InstanceSide.from(sPlayer));
                 NetworkHooks.openGui(sPlayer, provider, buf -> buf.writeByte(slotCount));
+                success = true;
             }
         }
 
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+        return InteractionResultHolder.sidedSuccess(pouchStack, level.isClientSide && success);
+    }
+
+    @Override
+    public InteractionResult useOn(UseOnContext ctx) {
+        return super.useOn(ctx);
+//        return InteractionResult.sidedSuccess(ctx.getLevel().isClientSide);
     }
 
     @Override

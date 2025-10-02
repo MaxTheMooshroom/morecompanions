@@ -188,7 +188,7 @@ public class CompositeTexture {
          * Binds and prepares this component for rendering, then invokes the given render action.
          *
          * @param poseStack current pose stack
-         * @param runnable  rendering action consuming the context
+         * @param action  rendering action consuming the context
          * @implNote
          * Using this guarantees that, at the time of invocation, both the parent {@link CompositeTexture}
          * and this {@link ComponentTexture} are uploaded and bound. This guarantee does not extend

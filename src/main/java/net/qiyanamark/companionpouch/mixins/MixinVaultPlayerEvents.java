@@ -84,13 +84,15 @@ public class MixinVaultPlayerEvents {
                             });
                         });
 
-                    perCompanionModifiers.forEach(rel -> {
-                        if (modifiers.contains(rel)) {
-                            curseStack[0]++;
-                        } else {
-                            modifiers.add(rel);
-                        }
-                    });
+                    perCompanionModifiers.stream()
+                            .filter(rel -> !rel.getPath().equals("companion_challenge"))
+                            .forEach(rel -> {
+                                if (modifiers.contains(rel)) {
+                                    curseStack[0] += 2;
+                                } else {
+                                    modifiers.add(rel);
+                                }
+                            });
                 }
             }
         });
