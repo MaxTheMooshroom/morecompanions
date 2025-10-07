@@ -48,7 +48,6 @@ public class ModCompanionPouch {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         modBus.addListener(ModCompanionPouch::clientSetup);
-        modBus.addListener(CatalogCapability::registerCapabilities);
 
         CatalogItem.REGISTRY.register(modBus);
 

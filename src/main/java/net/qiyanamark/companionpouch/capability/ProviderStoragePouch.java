@@ -1,5 +1,9 @@
 package net.qiyanamark.companionpouch.capability;
 
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.TextComponent;
+import net.qiyanamark.companionpouch.ModCompanionPouch;
+import net.qiyanamark.companionpouch.util.Structs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -84,7 +88,7 @@ public class ProviderStoragePouch implements ICapabilityProvider, INBTSerializab
         @Override
         @Extends(ItemStackHandler.class)
         protected void onContentsChanged(int index) {
-            this.pouchStack.getOrCreateTag().put(STORAGE_KEY, this.serializeNBT());
+            this.pouchTag().put(STORAGE_KEY, super.serializeNBT());
         }
 
         @Override
@@ -96,7 +100,7 @@ public class ProviderStoragePouch implements ICapabilityProvider, INBTSerializab
         @Override
         @Implements(IDataPouchCompanion.class)
         public void setActivationIndex(byte index) {
-            if (0 <= index && index < this.getSlots()) {
+            if (index >= 0 && index < this.getSlots()) {
                 this.activationIndex = index;
                 this.save();
             }
@@ -133,6 +137,11 @@ public class ProviderStoragePouch implements ICapabilityProvider, INBTSerializab
 
             pouchTag.put(STORAGE_KEY, super.serializeNBT());
             pouchTag.putByte(ACTIVATE_KEY, this.activationIndex);
+
+//            Structs.InstanceSide.get().ifClient(() -> {
+//                LocalPlayer lPlayer = ModCompanionPouch.getClientPlayer();
+//                lPlayer.sendMessage(new TextComponent("serializing pouch; activationIndex: "), lPlayer.getUUID());
+//            });
 
             return pouchTag.copy();
         }

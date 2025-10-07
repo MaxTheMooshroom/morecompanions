@@ -1,6 +1,8 @@
 package net.qiyanamark.companionpouch.item;
 
+import net.qiyanamark.companionpouch.capability.ProviderStoragePouch;
 import org.jetbrains.annotations.NotNull;
+import javax.annotation.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -8,6 +10,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -20,6 +23,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.network.NetworkHooks;
 
@@ -34,6 +38,8 @@ import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.util.annotations.Extends;
 import net.qiyanamark.companionpouch.util.annotations.Implements;
 import net.qiyanamark.companionpouch.util.Structs;
+
+import iskallia.vault.world.data.VaultPlayerStats;
 
 import static iskallia.vault.init.ModItems.VAULT_MOD_GROUP;
 
@@ -85,6 +91,11 @@ public class ItemPouchCompanion extends Item implements ICurioItem {
         }
 
         return success ? InteractionResultHolder.sidedSuccess(pouchStack, level.isClientSide) : InteractionResultHolder.pass(pouchStack);
+    }
+
+    @Override
+    public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
+        return new ProviderStoragePouch(stack);
     }
 
     @Override

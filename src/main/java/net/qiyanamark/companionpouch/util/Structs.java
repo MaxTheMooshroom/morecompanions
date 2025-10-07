@@ -1,11 +1,15 @@
 package net.qiyanamark.companionpouch.util;
 
 import com.mojang.datafixers.util.Pair;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.NonNullList;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.catalog.CatalogItem;
 import net.qiyanamark.companionpouch.item.ItemPouchCompanion;
 import org.jetbrains.annotations.NotNull;
@@ -16,6 +20,7 @@ import top.theillusivec4.curios.api.SlotResult;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collector;
 
 public class Structs {
@@ -173,8 +178,24 @@ public class Structs {
             return this == CLIENT ? "CLIENT" : "SERVER";
         }
 
-        public static <E extends Entity> InstanceSide from(E entity) {
+        public static InstanceSide from(Entity entity) {
             return entity.level.isClientSide ? CLIENT : SERVER;
+        }
+
+        public InstanceSide ifThen(InstanceSide side, Runnable fn) {
+            if (this == side) {
+                fn.run();
+            }
+
+            return this;
+        }
+
+        public InstanceSide ifClient(Runnable fn) {
+            return this.ifThen(CLIENT, fn);
+        }
+
+        public InstanceSide ifServer(Runnable fn) {
+            return this.ifThen(SERVER, fn);
         }
     }
 

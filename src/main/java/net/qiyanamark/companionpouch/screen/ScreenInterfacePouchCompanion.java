@@ -82,11 +82,11 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
                             new IndexedItem<>(i, canUseTemporal),
                             ACTIVATOR_STATE_0, ACTIVATOR_STATE_1, ACTIVATOR_PREDICATE
                     ));
-                    this.buttons.add(new ToggleButton<>(
-                            0, 0,
-                            new IndexedItem<>(i, this.pouchCap),
-                            TOGGLER_INDEX_0, TOGGLER_INDEX_1, TOGGLER_PREDICATE
-                    ));
+//                    this.buttons.add(new ToggleButton<>(
+//                            0, 0,
+//                            new IndexedItem<>(i, this.pouchCap),
+//                            TOGGLER_INDEX_0, TOGGLER_INDEX_1, TOGGLER_PREDICATE
+//                    ));
                 });
     }
 
@@ -113,7 +113,7 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
                         buttonOffset = CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET;
 
                         boolean canUseTemporal = HelperCompanions.companionCanUseTemporalInVault(slot.getItem(), vaultMaybe);
-                        ((ToggleButton<IndexedItem<Boolean>>) (Object) button).setState(new IndexedItem<>(i, canUseTemporal));
+                        button.setState(new IndexedItem<>(i, canUseTemporal));
                     }
 
                     Vec2i newPos = buttonOffset.add(pos);
