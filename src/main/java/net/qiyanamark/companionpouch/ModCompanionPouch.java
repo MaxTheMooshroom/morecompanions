@@ -2,6 +2,7 @@ package net.qiyanamark.companionpouch;
 
 import iskallia.vault.core.vault.VaultUtils;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.qiyanamark.companionpouch.catalog.CatalogCapability;
 import net.qiyanamark.companionpouch.network.PacketRequestOpenInventoryPouch;
 import net.qiyanamark.companionpouch.util.Structs;
 import org.lwjgl.glfw.GLFW;
@@ -47,6 +48,7 @@ public class ModCompanionPouch {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         modBus.addListener(ModCompanionPouch::clientSetup);
+        modBus.addListener(CatalogCapability::registerCapabilities);
 
         CatalogItem.REGISTRY.register(modBus);
 

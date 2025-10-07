@@ -39,7 +39,7 @@ public class CatalogMenu {
     public static void registerMenus(RegistryEvent.Register<MenuType<?>> event) {
         IForgeRegistry<MenuType<?>> registry = event.getRegistry();
 
-        registry.register(COMPANION_POUCH_INTERFACE.setRegistryName(MenuInterfacePouchCompanion.MENU_ID));
+        registry.register(COMPANION_POUCH_INTERFACE.setRegistryName(MenuInterfacePouchCompanion.MENU_I18N));
         registry.register(COMPANION_POUCH_INVENTORY.setRegistryName(MenuInventoryPouchCompanion.MENU_ID));
     }
 
