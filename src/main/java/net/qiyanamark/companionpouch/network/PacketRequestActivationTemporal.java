@@ -36,7 +36,6 @@ public class PacketRequestActivationTemporal {
         ctx.enqueueWork(() -> {
             ServerPlayer sPlayer = Objects.requireNonNull(ctx.getSender());
             byte companionIndex = request.companionIndex;
-            sPlayer.sendMessage(new TextComponent("Requesting open temporal at index " + companionIndex), sPlayer.getUUID());
 
             Optional<Pair<Structs.LocationPouch, ItemStack>> pouchLocation = Structs.LocationPouch.findOnPlayer(sPlayer);
             pouchLocation.ifPresent(pair -> pair.getSecond()
