@@ -1,21 +1,17 @@
 package net.qiyanamark.companionpouch.screen;
 
+import org.jetbrains.annotations.NotNull;
+
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.api.distmarker.Dist;
-
+import net.qiyanamark.companionpouch.catalog.CatalogMenu;
 import net.qiyanamark.companionpouch.menu.container.MenuInventoryPouchCompanion;
-import net.qiyanamark.companionpouch.util.Structs.Vec2i;
 import net.qiyanamark.companionpouch.util.annotations.Extends;
 
-import net.qiyanamark.companionpouch.catalog.CatalogMenu;
-
-@OnlyIn(Dist.CLIENT)
 public class ScreenInventoryPouchCompanion extends AbstractContainerScreen<MenuInventoryPouchCompanion> {
     public ScreenInventoryPouchCompanion(MenuInventoryPouchCompanion menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
@@ -33,7 +29,7 @@ public class ScreenInventoryPouchCompanion extends AbstractContainerScreen<MenuI
 
     @Override
     @Extends(AbstractContainerScreen.class)
-    protected void renderBg(PoseStack poseStack, float pPartialTick, int pMouseX, int pMouseY) {
+    protected void renderBg(@NotNull PoseStack poseStack, float pPartialTick, int pMouseX, int pMouseY) {
         CatalogMenu.TEXTURE_ATLAS_MENUS_POUCH.prepareSlow();
 
         this.renderChrome(poseStack);
@@ -42,7 +38,7 @@ public class ScreenInventoryPouchCompanion extends AbstractContainerScreen<MenuI
 
     @Override
     @Extends(AbstractContainerScreen.class)
-    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
+    public void render(@NotNull PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
         this.renderBackground(poseStack);
         super.render(poseStack, mouseX, mouseY, partialTicks);
         this.renderTooltip(poseStack, mouseX, mouseY);

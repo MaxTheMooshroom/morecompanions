@@ -1,26 +1,30 @@
 package net.qiyanamark.companionpouch.util;
 
 import com.mojang.datafixers.util.Pair;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.NonNullList;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.util.LazyOptional;
+import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.catalog.CatalogItem;
-import net.qiyanamark.companionpouch.helper.HelperCompanions;
 import net.qiyanamark.companionpouch.item.ItemPouchCompanion;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotResult;
 
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
 import java.util.stream.Collector;
 
 public class Structs {
-    public static record Vec2(float x, float y) {
+    public record Vec2(float x, float y) {
         public Vec2 copy() {
             return new Vec2(this.x, this.y);
         }
@@ -42,7 +46,7 @@ public class Structs {
         }
     }
 
-    public static record Vec2i(int x, int y) {
+    public record Vec2i(int x, int y) {
         private Vec2i() { this(0, 0); }
         
         public Vec2i copy() {
@@ -79,13 +83,13 @@ public class Structs {
         }
     }
 
-    public static record Vec4(int r, int g, int b, int a) {
+    public record Vec4(int r, int g, int b, int a) {
         public Vec4 copy() {
             return new Vec4(this.r, this.g, this.b, this.a);
         }
     }
 
-    public static record Vertex2D(
+    public record Vertex2D(
                 Vec2 pos,
                 Optional<Vec4> color,
                 Optional<Vec2i> uv
@@ -106,6 +110,65 @@ public class Structs {
         }
     }
 
+    public static class WriteOnce<T> {
+        private @Nullable T inner = null;
+
+        public static <T> WriteOnce<T> of(T value) {
+            return new WriteOnce<>(value);
+        }
+
+        public static <T> WriteOnce<T> empty() {
+            return new WriteOnce<>(null);
+        }
+
+        public void write(T value) {
+            if (this.inner != null) {
+                throw new IllegalStateException("Cannot set the value of a WriteOnce that already has a value set");
+            }
+            this.inner = value;
+        }
+
+        public @NotNull T read() {
+            if (this.inner == null) {
+                throw new NoSuchElementException("No value present");
+            }
+            return this.inner;
+        }
+
+        public @NotNull Optional<T> tryRead() {
+            return Optional.ofNullable(this.inner);
+        }
+
+        private WriteOnce(@Nullable T initial) {
+            this.inner = initial;
+        }
+    }
+
+    public static class ReadOnce<T> {
+        private @Nullable T inner;
+
+        public static <T> ReadOnce<T> of(@NotNull T value) {
+            return new ReadOnce<>(Objects.requireNonNull(value));
+        }
+
+        public static <T> ReadOnce<T> empty() {
+            return new ReadOnce<>(null);
+        }
+
+        public T read() {
+            if (this.inner == null) {
+                throw new NoSuchElementException("No value present");
+            }
+            T result = this.inner;
+            this.inner = null;
+            return result;
+        }
+
+        private ReadOnce(@Nullable T initial) {
+            this.inner = initial;
+        }
+    }
+
     public enum InstanceSide {
         CLIENT,
         SERVER;
@@ -115,8 +178,24 @@ public class Structs {
             return this == CLIENT ? "CLIENT" : "SERVER";
         }
 
-        public static <E extends Entity> InstanceSide from(E entity) {
+        public static InstanceSide from(Entity entity) {
             return entity.level.isClientSide ? CLIENT : SERVER;
+        }
+
+        public InstanceSide ifThen(InstanceSide side, Runnable fn) {
+            if (this == side) {
+                fn.run();
+            }
+
+            return this;
+        }
+
+        public InstanceSide ifClient(Runnable fn) {
+            return this.ifThen(CLIENT, fn);
+        }
+
+        public InstanceSide ifServer(Runnable fn) {
+            return this.ifThen(SERVER, fn);
         }
     }
 
@@ -158,34 +237,6 @@ public class Structs {
                         .map(SlotResult::stack);
                 default -> Optional.empty();
             };
-        }
-    }
-
-    public static class CapabilityWrapper<Cap, K> {
-        private final K capableObject;
-        private final Function<K, LazyOptional<Cap>> retriever;
-        private LazyOptional<Cap> inner;
-
-        public CapabilityWrapper(K object, Function<K, LazyOptional<Cap>> retriever) {
-            this.capableObject = object;
-            this.retriever = retriever;
-            this.inner = Objects.requireNonNull(this.retriever.apply(this.capableObject));
-
-            if (this.inner.isPresent()) {
-                this.inner.addListener(this::onCapInvalidate);
-            }
-        }
-
-        public Cap get() {
-            if (!this.inner.isPresent()) {
-                this.inner = this.retriever.apply(this.capableObject);
-            }
-            return this.inner.orElseThrow(IllegalStateException::new);
-        }
-
-        private void onCapInvalidate(LazyOptional<Cap> opt) {
-            this.inner = this.retriever.apply(this.capableObject);
-            this.inner.addListener(this::onCapInvalidate);
         }
     }
 

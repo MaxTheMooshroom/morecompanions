@@ -27,8 +27,8 @@ public class CatalogNetwork {
     );
 
     public static void register() {
-        registerMessage("1", PacketRequestOpenInterfacePouch.class, PacketRequestOpenInterfacePouch::encode, PacketRequestOpenInterfacePouch::decode, PacketRequestOpenInterfacePouch::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
-        registerMessage("1", PacketRequestOpenInventoryPouch.class, PacketRequestOpenInventoryPouch::encode, PacketRequestOpenInventoryPouch::decode, PacketRequestOpenInventoryPouch::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        registerMessage("1", PacketRequestOpenInterfacePouch.class, CatalogNetwork::nopEncode, CatalogNetwork.nopDecode(PacketRequestOpenInterfacePouch.INSTANCE), PacketRequestOpenInterfacePouch::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        registerMessage("1", PacketRequestOpenInventoryPouch.class, CatalogNetwork::nopEncode, CatalogNetwork.nopDecode(PacketRequestOpenInventoryPouch.INSTANCE), PacketRequestOpenInventoryPouch::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         registerMessage("1", PacketRequestActivationTemporal.class, PacketRequestActivationTemporal::encode, PacketRequestActivationTemporal::decode, PacketRequestActivationTemporal::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
     }
 
@@ -69,4 +69,7 @@ public class CatalogNetwork {
     private static boolean canDecodeProtocolVersion(String version) {
         return Arrays.asList(VERSION_DECODE_SUPPORTED).contains(version);
     }
+
+    private static <T> void nopEncode(T packet, FriendlyByteBuf buf) {}
+    private static <T> Function<FriendlyByteBuf, T> nopDecode(T instance) { return buf -> instance; }
 }

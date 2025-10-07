@@ -2,6 +2,7 @@ package net.qiyanamark.companionpouch;
 
 import iskallia.vault.core.vault.VaultUtils;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.qiyanamark.companionpouch.catalog.CatalogCapability;
 import net.qiyanamark.companionpouch.network.PacketRequestOpenInventoryPouch;
 import net.qiyanamark.companionpouch.util.Structs;
 import org.lwjgl.glfw.GLFW;
@@ -93,9 +94,9 @@ public class ModCompanionPouch {
                         if (VaultUtils.getVault(lPlayer.level).isPresent()) {
                             if (lPlayer.isCrouching()) {
                                 PacketRequestOpenInterfacePouch.sendToServer();
-                            } else {
-                                PacketRequestActivationTemporal.sendToServer((byte) -1); // use pouch setting
-                            }
+                            } // else {
+//                                PacketRequestActivationTemporal.sendToServer((byte) -1); // use pouch setting
+//                            }
                         } else {
                             PacketRequestOpenInventoryPouch.sendToServer();
                         }

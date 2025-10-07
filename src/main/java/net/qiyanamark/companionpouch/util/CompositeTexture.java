@@ -1,5 +1,6 @@
 package net.qiyanamark.companionpouch.util;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import com.mojang.blaze3d.pipeline.RenderCall;
@@ -22,6 +23,7 @@ import net.minecraft.resources.ResourceLocation;
 
 import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.util.Structs.Vec2i;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a composite texture resource that can be managed and drawn
@@ -278,7 +280,7 @@ public class CompositeTexture {
             if (this.vbo.isEmpty()) {
                 return;
             }
-            CompositeTexture.executeOnRenderThread(() -> this._close());
+            CompositeTexture.executeOnRenderThread(this::_close);
         }
 
         protected final CompositeTexture parent;
@@ -302,10 +304,10 @@ public class CompositeTexture {
         private void _upload() {
             RenderSystem.assertOnRenderThread();
 
-            float minU = this.texturePosition.x() / this.parent.size.x();
-            float minV = this.texturePosition.y() / this.parent.size.y();
-            float maxU = (this.texturePosition.x() + this.size.x()) / this.parent.size.x();
-            float maxV = (this.texturePosition.y() + this.size.y()) / this.parent.size.y();
+            float minU = (float) this.texturePosition.x() / this.parent.size.x();
+            float minV = (float) this.texturePosition.y() / this.parent.size.y();
+            float maxU = (float) (this.texturePosition.x() + this.size.x()) / this.parent.size.x();
+            float maxV = (float) (this.texturePosition.y() + this.size.y()) / this.parent.size.y();
 
             VertexBuffer vbo = new VertexBuffer();
             BufferBuilder builder = new BufferBuilder(20);
@@ -344,7 +346,7 @@ public class CompositeTexture {
          * Releases this component's vertex buffer and clears the internal reference.
          */
         private void _close() {
-            this.vbo.get().close();
+            this.vbo.ifPresent(VertexBuffer::close);
             this.vbo = Optional.empty();
         }
     }
@@ -359,14 +361,14 @@ public class CompositeTexture {
      * passed into texture draw calls.
      */
     public static class RenderContext {
-        public final PoseStack poseStack;
-        public final Matrix4f projectionMatrix;
-        public final ShaderInstance shader;
+        public @NotNull final PoseStack poseStack;
+        public @NotNull final Matrix4f projectionMatrix;
+        public @NotNull final ShaderInstance shader;
 
-        private RenderContext(PoseStack poseStack) {
+        private RenderContext(@NotNull PoseStack poseStack) {
             this.poseStack = poseStack;
             this.projectionMatrix = RenderSystem.getProjectionMatrix();
-            this.shader = RenderSystem.getShader();
+            this.shader = Objects.requireNonNull(RenderSystem.getShader());
         }
     }
 

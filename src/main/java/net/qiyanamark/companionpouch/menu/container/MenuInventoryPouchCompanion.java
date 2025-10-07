@@ -9,13 +9,12 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
-import net.minecraftforge.items.CapabilityItemHandler;
-import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.SlotItemHandler;
 
 import iskallia.vault.item.CompanionItem;
-import net.qiyanamark.companionpouch.capability.CapabilityPouchCompanion;
 import net.qiyanamark.companionpouch.capability.IDataPouchCompanion;
+import net.qiyanamark.companionpouch.catalog.CatalogCapability;
 import net.qiyanamark.companionpouch.catalog.CatalogMenu;
 import net.qiyanamark.companionpouch.helper.HelperInventory;
 import net.qiyanamark.companionpouch.util.IByteBufEnum;
@@ -23,26 +22,32 @@ import net.qiyanamark.companionpouch.util.Structs;
 import net.qiyanamark.companionpouch.util.annotations.Extends;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.util.Optional;
 
 public class MenuInventoryPouchCompanion extends AbstractContainerMenu {
     public static final String MENU_ID = "container_inventory_pouch_companion";
     public static final String SCREEN_I18N = "screen.companionpouch.interface_pouch_companion";
 
-    private final Structs.CapabilityWrapper<IDataPouchCompanion, ItemStack> handler;
+    private final ItemStack pouchStack;
     private final int slotCount;
+
+    private LazyOptional<IDataPouchCompanion> pouchDataProvider;
+    private IDataPouchCompanion pouchData;
 
     // Server-side ctor
     public MenuInventoryPouchCompanion(int id, Inventory inv, ItemStack pouchStack, int slotCount) {
         super(CatalogMenu.COMPANION_POUCH_INVENTORY, id);
+        this.pouchStack = pouchStack;
         this.slotCount = slotCount;
-        this.handler = new Structs.CapabilityWrapper<>(
-                pouchStack,
-                stack -> stack.getCapability(CapabilityPouchCompanion.COMPANION_POUCH_CAPABILITY)
-        );
 
+        this.refreshPouchDataCapability(null);
         defineLayout(inv);
+    }
+
+    private void refreshPouchDataCapability(LazyOptional<IDataPouchCompanion> oldCap) {
+        this.pouchDataProvider = this.pouchStack.getCapability(CatalogCapability.COMPANION_POUCH_CAPABILITY);
+        this.pouchDataProvider.addListener(this::refreshPouchDataCapability);
+        this.pouchData = this.pouchDataProvider.orElseThrow(IllegalStateException::new);
     }
 
     // Client-side ctor from network
@@ -110,7 +115,7 @@ public class MenuInventoryPouchCompanion extends AbstractContainerMenu {
         
         for (int i = 0; i < this.slotCount; i++) {
             int posX = leftPadding + i * slotWidth;
-            this.addSlot(new SlotContainerPouch(this.handler.get(), i, posX, 32));
+            this.addSlot(new SlotContainerPouch(this.pouchData, i, posX, 32));
         }
 
         HelperInventory.playerInventory(inv).forEach(this::addSlot);
