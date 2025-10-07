@@ -94,9 +94,9 @@ public class ModCompanionPouch {
                         if (VaultUtils.getVault(lPlayer.level).isPresent()) {
                             if (lPlayer.isCrouching()) {
                                 PacketRequestOpenInterfacePouch.sendToServer();
-                            } else {
-                                PacketRequestActivationTemporal.sendToServer((byte) -1); // use pouch setting
-                            }
+                            } // else {
+//                                PacketRequestActivationTemporal.sendToServer((byte) -1); // use pouch setting
+//                            }
                         } else {
                             PacketRequestOpenInventoryPouch.sendToServer();
                         }
