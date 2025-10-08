@@ -21,6 +21,7 @@ import net.qiyanamark.companionpouch.util.IByteBufEnum;
 import net.qiyanamark.companionpouch.util.Structs;
 import net.qiyanamark.companionpouch.util.annotations.Extends;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -51,7 +52,7 @@ public class MenuInventoryPouchCompanion extends AbstractContainerMenu {
     }
 
     // Client-side ctor from network
-    public static MenuInventoryPouchCompanion fromNetwork(int id, Inventory inv, FriendlyByteBuf buf) {
+    public static @Nullable MenuInventoryPouchCompanion fromNetwork(int id, Inventory inv, FriendlyByteBuf buf) {
         Structs.LocationPouch location = IByteBufEnum.readByte(Structs.LocationPouch.class, buf);
         int slotCount = buf.readByte();
 

@@ -34,7 +34,7 @@ import net.qiyanamark.companionpouch.item.ItemPouchCompanion;
 import net.qiyanamark.companionpouch.util.annotations.Extends;
 import net.qiyanamark.companionpouch.util.annotations.Implements;
 
-public class ProviderStoragePouch implements ICapabilityProvider, INBTSerializable {
+public class ProviderStoragePouch implements ICapabilityProvider, INBTSerializable<CompoundTag> {
     public static final String REL_ID = "companion_pouch_capability";
 
     public static final String STORAGE_KEY = "storage";
@@ -61,14 +61,14 @@ public class ProviderStoragePouch implements ICapabilityProvider, INBTSerializab
 
     @Override
     @Implements(INBTSerializable.class)
-    public Tag serializeNBT() {
+    public CompoundTag serializeNBT() {
         return this.inner != null ? this.inner.serializeNBT() : new CompoundTag();
     }
 
     @Override
     @Implements(INBTSerializable.class)
-    public void deserializeNBT(Tag tag) {
-        if (this.inner != null && tag instanceof CompoundTag nbt) {
+    public void deserializeNBT(CompoundTag nbt) {
+        if (this.inner != null && nbt != null) {
             this.inner.deserializeNBT(nbt);
         }
     }
@@ -102,7 +102,7 @@ public class ProviderStoragePouch implements ICapabilityProvider, INBTSerializab
         public void setActivationIndex(byte index) {
             if (index >= 0 && index < this.getSlots()) {
                 this.activationIndex = index;
-                this.save();
+                this.saveChanges();
             }
         }
 
@@ -163,8 +163,8 @@ public class ProviderStoragePouch implements ICapabilityProvider, INBTSerializab
             }
         }
 
-        private void save() {
-            this.serializeNBT();
+        public CompoundTag saveChanges() {
+            return this.serializeNBT();
         }
 
         private CompoundTag pouchTag() {
