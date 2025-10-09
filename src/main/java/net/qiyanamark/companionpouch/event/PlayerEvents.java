@@ -23,13 +23,16 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.helper.HelperCompanions;
+import net.qiyanamark.companionpouch.util.Structs;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 @Mod.EventBusSubscriber(modid = ModCompanionPouch.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -44,6 +47,10 @@ public class PlayerEvents {
         Set<ResourceLocation> perCompanionModifiers = new HashSet<>();
 
         int[] curseStack = {0};
+
+        if (Structs.LocationPouch.CURIO.getFromEntity(player).isEmpty()) {
+            return;
+        }
 
         HelperCompanions.forEachCompanion(player, stack -> {
             String companionName = CompanionItem.getPetName(stack);

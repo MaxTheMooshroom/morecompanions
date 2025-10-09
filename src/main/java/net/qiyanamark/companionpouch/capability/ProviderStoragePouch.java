@@ -149,7 +149,6 @@ public class ProviderStoragePouch implements ICapabilityProvider, INBTSerializab
             if (nbt.contains(STORAGE_KEY)) {
                 CompoundTag storageTag = nbt.getCompound(STORAGE_KEY);
                 super.deserializeNBT(storageTag);
-                pouchTag.put(STORAGE_KEY, storageTag);
             }
         }
 
