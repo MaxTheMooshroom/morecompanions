@@ -1,14 +1,20 @@
 package net.qiyanamark.companionpouch.mixins;
 
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 import iskallia.vault.init.ModConfigs;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-import net.qiyanamark.companionpouch.helper.HelperCompanions;
+import net.qiyanamark.companionpouch.capability.IDataPouchCompanion;
+import net.qiyanamark.companionpouch.catalog.CatalogCapability;
+import net.qiyanamark.companionpouch.util.Structs;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -40,6 +46,31 @@ public abstract class MixinCompanionItem {
         cir.setReturnValue(result);
         cir.cancel();
     }
+    
+    @Unique
+    private static void grantVaultCompletionXP$pouch(Player player, ItemStack pouchStack, int experience) {
+        IDataPouchCompanion pouchData = pouchStack.getCapability(CatalogCapability.COMPANION_POUCH_CAPABILITY)
+                .orElseThrow(IllegalStateException::new);
+
+        IntStream.range(0, pouchData.getSlots())
+                .mapToObj(pouchData::getStackInSlot)
+                .filter(companionStack -> !companionStack.isEmpty() && CompanionItem.isActive(companionStack) && CompanionItem.isOwner(companionStack, player))
+                .forEach((companionStack) -> grantVaultCompletionXP$itemCompanion(player, companionStack, experience));
+
+        CompoundTag nbt = pouchData.save();
+        pouchStack.setTag(nbt);
+    }
+
+    @Unique
+    private static void grantVaultCompletionXP$itemCompanion(Player player, ItemStack companionStack, int experience) {
+        int xp = Math.round((float) experience * ModConfigs.COMPANIONS.getCompletionXpShare());
+        if (xp > 0) {
+            CompanionItem.addCompanionXP(companionStack, xp);
+            player.sendMessage(new TextComponent("Granted XP to " + CompanionItem.getPetName(companionStack)), player.getUUID());
+        } else {
+            player.sendMessage(new TextComponent("No XP granted to " + CompanionItem.getPetName(companionStack)), player.getUUID());
+        }
+    }
 
     @Inject(
             at = @At("HEAD"),
@@ -48,14 +79,13 @@ public abstract class MixinCompanionItem {
     )
     private static void grantVaultCompletionXP(Player player, int experience, CallbackInfo ci) {
         if (!player.level.isClientSide) {
-            HelperCompanions.getCompanions(player).stream()
-                    .filter(stack -> CompanionItem.isActive(stack) && CompanionItem.isOwner(stack, player))
-                    .forEach((stack) -> {
-                        int xp = Math.round((float)experience * ModConfigs.COMPANIONS.getCompletionXpShare());
-                        if (xp > 0) {
-                            CompanionItem.addCompanionXP(stack, xp);
-                        }
-                    });
+            Optional<ItemStack> pouchStackMaybe = Structs.LocationPouch.CURIO.getFromEntity(player);
+            pouchStackMaybe.ifPresentOrElse(
+                    pouchStack -> grantVaultCompletionXP$pouch(player, pouchStack, experience),
+                    () -> CompanionItem.getCompanion(player)
+                            .filter(stack -> !stack.isEmpty() && CompanionItem.isActive(stack) && CompanionItem.isOwner(stack, player))
+                            .ifPresent(companionStack -> grantVaultCompletionXP$itemCompanion(player, companionStack, experience))
+            );
         }
         ci.cancel();
     }

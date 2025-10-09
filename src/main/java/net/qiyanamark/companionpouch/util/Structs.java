@@ -1,15 +1,12 @@
 package net.qiyanamark.companionpouch.util;
 
 import com.mojang.datafixers.util.Pair;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.NonNullList;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.catalog.CatalogItem;
 import net.qiyanamark.companionpouch.item.ItemPouchCompanion;
 import org.jetbrains.annotations.NotNull;
@@ -20,7 +17,6 @@ import top.theillusivec4.curios.api.SlotResult;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.stream.Collector;
 
 public class Structs {
@@ -225,13 +221,13 @@ public class Structs {
             }
         }
 
-        public Optional<ItemStack> getFromPlayer(Player player) {
+        public Optional<ItemStack> getFromEntity(LivingEntity entity) {
             return switch (this) {
-                case MAIN_HAND -> Optional.of(player.getMainHandItem());
-                case OFF_HAND -> Optional.of(player.getOffhandItem());
+                case MAIN_HAND -> Optional.of(entity.getMainHandItem());
+                case OFF_HAND -> Optional.of(entity.getOffhandItem());
                 case CURIO -> CuriosApi.getCuriosHelper()
                         .findFirstCurio(
-                                player,
+                                entity,
                                 stack -> stack.getItem() == CatalogItem.COMPANION_POUCH.get()
                         )
                         .map(SlotResult::stack);

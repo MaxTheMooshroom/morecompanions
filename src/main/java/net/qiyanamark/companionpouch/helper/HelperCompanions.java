@@ -1,42 +1,40 @@
 package net.qiyanamark.companionpouch.helper;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
+import net.qiyanamark.companionpouch.capability.IDataPouchCompanion;
+import net.qiyanamark.companionpouch.catalog.CatalogCapability;
+import net.qiyanamark.companionpouch.util.Structs;
 import org.checkerframework.checker.nullness.qual.NonNull;
-import top.theillusivec4.curios.api.CuriosApi;
-import top.theillusivec4.curios.api.SlotResult;
 
 import iskallia.vault.core.vault.Vault;
-import iskallia.vault.init.ModItems;
 import iskallia.vault.item.CompanionItem;
 
-import net.qiyanamark.companionpouch.catalog.CatalogItem;
-import net.qiyanamark.companionpouch.item.ItemPouchCompanion;
-
 public class HelperCompanions {
-    public static List<ItemStack> getCompanions(LivingEntity entity) {
-        if (entity.isSpectator()) {
-            return Collections.emptyList();
-        }
+    public static boolean forEachCompanion(Player player, Consumer<ItemStack> transformer) {
+        Optional<ItemStack> pouchStackMaybe = Structs.LocationPouch.CURIO.getFromEntity(player);
+        Optional<ItemStack> companionStackMaybe = CompanionItem.getCompanion(player);
 
-        return CuriosApi.getCuriosHelper()
-            .findFirstCurio(entity, stack -> stack.getItem() == ModItems.COMPANION || stack.getItem() == CatalogItem.COMPANION_POUCH.get())
-            .map(slot -> {
-                ItemStack stack = slot.stack();
-                if (stack.getItem() instanceof ItemPouchCompanion) {
-                    return ItemPouchCompanion.getContents(stack);
-                } else {
-                    return new ArrayList<>(List.of(stack));
-                }
-            })
-            .orElseGet(Collections::emptyList);
+        pouchStackMaybe.ifPresentOrElse(
+                pouchStack -> {
+                    IDataPouchCompanion handler = pouchStack.getCapability(CatalogCapability.COMPANION_POUCH_CAPABILITY).orElseThrow(IllegalStateException::new);
+
+                    IntStream.range(0, handler.getSlots())
+                            .mapToObj(handler::getStackInSlot)
+                            .filter(companionStack -> !companionStack.isEmpty())
+                            .forEach(transformer);
+
+                    handler.save();
+                },
+                () -> companionStackMaybe.ifPresent(transformer)
+        );
+
+        return pouchStackMaybe.isPresent() || companionStackMaybe.isPresent();
     }
 
     public static boolean companionCanUseTemporalInVault(ItemStack companionStack, @NonNull Optional<Vault> vault) {

@@ -5,8 +5,8 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "companionpouch.refmap.json",
   "mixins": [
-    "MixinCompanionItem",
-    "MixinVaultPlayerEvents"
+    "MixinCompanionCommand",
+    "MixinCompanionItem"
   ],
   "injectors": {
     "defaultRequire": 1

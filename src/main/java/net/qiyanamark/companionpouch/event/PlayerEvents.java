@@ -1,44 +1,44 @@
-package net.qiyanamark.companionpouch.mixins;
+package net.qiyanamark.companionpouch.event;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Mth;
-
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.Inject;
-
+import com.mojang.datafixers.util.Pair;
 import iskallia.vault.core.random.JavaRandom;
 import iskallia.vault.core.vault.Vault;
 import iskallia.vault.core.vault.VaultUtils;
 import iskallia.vault.core.vault.modifier.registry.VaultModifierRegistry;
 import iskallia.vault.core.vault.modifier.spi.VaultModifier;
-import iskallia.vault.event.PlayerEvents;
 import iskallia.vault.event.event.VaultJoinEvent;
 import iskallia.vault.event.event.VaultLeaveEvent;
+import iskallia.vault.init.ModGameRules;
 import iskallia.vault.item.CompanionItem;
 import iskallia.vault.skill.base.Skill;
 import iskallia.vault.skill.expertise.type.CompanionCooldownExpertise;
 import iskallia.vault.skill.tree.ExpertiseTree;
+import iskallia.vault.world.VaultMode;
+import iskallia.vault.world.data.PlayerAbilitiesData;
 import iskallia.vault.world.data.PlayerExpertisesData;
-
+import iskallia.vault.world.data.ServerVaults;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.helper.HelperCompanions;
+import net.qiyanamark.companionpouch.util.Structs;
 
-@Mixin(value = PlayerEvents.class, remap = false)
-public class MixinVaultPlayerEvents {
-    @Inject(
-        at = @At("HEAD"),
-        method = "onVaultJoinApplyCompanion(Liskallia/vault/event/event/VaultJoinEvent;)V",
-        cancellable = true
-    )
-    private static void onVaultJoinApplyCompanion(VaultJoinEvent event, CallbackInfo ci) {
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+
+@Mod.EventBusSubscriber(modid = ModCompanionPouch.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+public class PlayerEvents {
+    @SubscribeEvent
+    public static void onVaultJoinApplyCompanion(VaultJoinEvent event) {
         ServerPlayer player = event.getPlayer();
         Vault vault = event.getVault();
         Set<ResourceLocation> temporals = new HashSet<>();
@@ -48,7 +48,11 @@ public class MixinVaultPlayerEvents {
 
         int[] curseStack = {0};
 
-        HelperCompanions.getCompanions(player).forEach(stack -> {
+        if (Structs.LocationPouch.CURIO.getFromEntity(player).isEmpty()) {
+            return;
+        }
+
+        HelperCompanions.forEachCompanion(player, stack -> {
             String companionName = CompanionItem.getPetName(stack);
             boolean onCd = CompanionItem.isOnCooldown(stack);
             CompanionItem.setActive(stack, !onCd);
@@ -73,16 +77,16 @@ public class MixinVaultPlayerEvents {
                     player.sendMessage(new TranslatableComponent("companion." + ModCompanionPouch.MOD_ID + ".relic.applied", companionName), player.getUUID());
 
                     CompanionItem.getAllRelics(stack).values().stream()
-                        .map(pair -> pair.getSecond())
-                        .forEach(list -> {
-                            list.forEach(id -> {
-                                VaultModifier<?> modifier = VaultModifierRegistry.get(id);
-                                if (modifier != null) {
-                                    vault.get(Vault.MODIFIERS).addModifier(modifier, 1, true, JavaRandom.ofNanoTime());
-                                }
-                                perCompanionModifiers.add(id);
+                            .map(Pair::getSecond)
+                            .forEach(list -> {
+                                list.forEach(id -> {
+                                    VaultModifier<?> modifier = VaultModifierRegistry.get(id);
+                                    if (modifier != null) {
+                                        vault.get(Vault.MODIFIERS).addModifier(modifier, 1, true, JavaRandom.ofNanoTime());
+                                    }
+                                    perCompanionModifiers.add(id);
+                                });
                             });
-                        });
 
                     perCompanionModifiers.stream()
                             .filter(rel -> !rel.getPath().equals("companion_challenge"))
@@ -96,7 +100,7 @@ public class MixinVaultPlayerEvents {
                 }
             }
         });
-        
+
         if (curseStack[0] > 3) {
             VaultModifier<?> noFruit = VaultModifierRegistry.get(new ResourceLocation("the_vault", "modifier_type/player_no_vault_fruit"));
             vault.get(Vault.MODIFIERS).addModifier(noFruit, 1, true, JavaRandom.ofNanoTime());
@@ -106,44 +110,54 @@ public class MixinVaultPlayerEvents {
                 vault.get(Vault.MODIFIERS).addModifier(companionCurse, 1, true, JavaRandom.ofNanoTime());
             }
         }
-
-        ci.cancel();
     }
 
-    @Inject(
-        at = @At("HEAD"),
-        method = "onVaultLeaveCompanionCooldown(Liskallia/vault/event/event/VaultLeaveEvent;)V",
-        cancellable = true
-    )
-    private static void onVaultLeaveCompanionCooldown(VaultLeaveEvent event, CallbackInfo ci) {
+    @SubscribeEvent
+    public static void onVaultLeaveCompanionCooldown(VaultLeaveEvent event) {
         ServerPlayer player = event.getPlayer();
         Vault vault = event.getVault();
         if (!VaultUtils.isSpecialVault(vault) && player != null) {
-            HelperCompanions.getCompanions(player).stream()
-                .filter(stack -> CompanionItem.getCompanionHearts(stack) > 0)
-                .forEach(stack -> {
-                    if (CompanionItem.getCompanionHearts(stack) == 0) {
-                        return;
-                    }
-                    
-                    CompanionItem.startCompanionCooldown(stack);
-                    ExpertiseTree expertises = PlayerExpertisesData.get(player.getLevel()).getExpertises(player);
-                    
-                    float reduction = expertises.getAll(CompanionCooldownExpertise.class, Skill::isUnlocked).stream()
+            HelperCompanions.forEachCompanion(player, companionStack -> {
+                if (CompanionItem.getCompanionHearts(companionStack) == 0) {
+                    return;
+                }
+
+                CompanionItem.startCompanionCooldown(companionStack);
+                ExpertiseTree expertises = PlayerExpertisesData.get(player.getLevel()).getExpertises(player);
+
+                float reduction = expertises.getAll(CompanionCooldownExpertise.class, Skill::isUnlocked).stream()
                         .map(CompanionCooldownExpertise::getCooldownReduction)
                         .reduce(0f, Float::sum);
 
-                    if (reduction > 0.0F) {
-                        int current = CompanionItem.getCurrentCooldown(stack);
-                        int reduceBy = Mth.floor((float)current * reduction);
-                        if (reduceBy > 0) {
-                            CompanionItem.reduceCooldown(stack, reduceBy);
-                        }
+                if (reduction > 0.0F) {
+                    int current = CompanionItem.getCurrentCooldown(companionStack);
+                    int reduceBy = Mth.floor((float)current * reduction);
+                    if (reduceBy > 0) {
+                        CompanionItem.reduceCooldown(companionStack, reduceBy);
                     }
+                }
 
-                    CompanionItem.incrementVaultRuns(stack);
-                });
+                CompanionItem.incrementVaultRuns(companionStack);
+            });
         }
-        ci.cancel();
+    }
+
+    @SubscribeEvent
+    public static void onDeath(LivingDeathEvent event) {
+        if (event.getEntity() instanceof ServerPlayer sPlayer) {
+            PlayerAbilitiesData.deactivateAllAbilities(sPlayer);
+            ServerLevel level = sPlayer.getLevel();
+
+            ServerVaults.get(level).ifPresent(vault -> {
+                VaultMode mode = level.getGameRules().getRule(ModGameRules.MODE).get();
+
+                if (mode != VaultMode.CASUAL && !VaultUtils.isSpecialVault(vault)) {
+                    HelperCompanions.forEachCompanion(sPlayer, companionStack -> {
+                        int hearts = Math.max(CompanionItem.getCompanionHearts(companionStack) - 1, 0);
+                        CompanionItem.setCompanionHearts(companionStack, hearts);
+                    });
+                }
+            });
+        }
     }
 }

@@ -2,7 +2,7 @@ package net.qiyanamark.companionpouch;
 
 import iskallia.vault.core.vault.VaultUtils;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.qiyanamark.companionpouch.catalog.CatalogCapability;
+import net.qiyanamark.companionpouch.event.PlayerEvents;
 import net.qiyanamark.companionpouch.network.PacketRequestOpenInventoryPouch;
 import net.qiyanamark.companionpouch.util.Structs;
 import org.lwjgl.glfw.GLFW;
@@ -27,8 +27,6 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.qiyanamark.companionpouch.catalog.CatalogItem;
 import net.qiyanamark.companionpouch.catalog.CatalogMenu;
 import net.qiyanamark.companionpouch.catalog.CatalogNetwork;
-import net.qiyanamark.companionpouch.helper.HelperCompanions;
-import net.qiyanamark.companionpouch.network.PacketRequestActivationTemporal;
 import net.qiyanamark.companionpouch.network.PacketRequestOpenInterfacePouch;
 import net.qiyanamark.companionpouch.screen.ScreenInterfacePouchCompanion;
 import net.qiyanamark.companionpouch.screen.ScreenInventoryPouchCompanion;

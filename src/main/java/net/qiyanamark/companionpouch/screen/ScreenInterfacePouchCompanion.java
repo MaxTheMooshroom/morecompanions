@@ -60,8 +60,8 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
         this.imageHeight = CatalogMenu.SCREEN_INTERFACE_CHROME.getSize().y();
 
         this.pouchCap = this.menu.getPouchStack()
-                .getCapability(CatalogCapability.COMPANION_POUCH_CAPABILITY)
-                .orElseThrow(IllegalStateException::new);
+            .getCapability(CatalogCapability.COMPANION_POUCH_CAPABILITY)
+            .orElseThrow(IllegalStateException::new);
 
         Optional<Vault> vaultMaybe = VaultUtils.getVault(ModCompanionPouch.getClientPlayer().level);
         if (vaultMaybe.isEmpty() && !ModCompanionPouch.DEBUG) {
@@ -69,25 +69,25 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
         }
 
         IntStream.range(0, this.pouchCap.getSlots())
-                .mapToObj(i -> new Pair<>(i, this.menu.getSlot(i)))
-                .filter(pair -> pair.getSecond().hasItem())
-                .forEach(pair -> {
-                    int i = pair.getFirst();
-                    Slot slot = pair.getSecond();
+            .mapToObj(i -> new Pair<>(i, this.menu.getSlot(i)))
+            .filter(pair -> pair.getSecond().hasItem())
+            .forEach(pair -> {
+                int i = pair.getFirst();
+                Slot slot = pair.getSecond();
 
-                    boolean canUseTemporal = HelperCompanions.companionCanUseTemporalInVault(slot.getItem(), vaultMaybe);
+                boolean canUseTemporal = HelperCompanions.companionCanUseTemporalInVault(slot.getItem(), vaultMaybe);
 
-                    this.buttons.add(new ToggleButton<>(
-                            0, 0,
-                            new IndexedItem<>(i, canUseTemporal),
-                            ACTIVATOR_STATE_0, ACTIVATOR_STATE_1, ACTIVATOR_PREDICATE
-                    ));
-//                    this.buttons.add(new ToggleButton<>(
-//                            0, 0,
-//                            new IndexedItem<>(i, this.pouchCap),
-//                            TOGGLER_INDEX_0, TOGGLER_INDEX_1, TOGGLER_PREDICATE
-//                    ));
-                });
+                this.buttons.add(new ToggleButton<>(
+                    0, 0,
+                    new IndexedItem<>(i, canUseTemporal),
+                    ACTIVATOR_STATE_0, ACTIVATOR_STATE_1, ACTIVATOR_PREDICATE
+                ));
+//                this.buttons.add(new ToggleButton<>(
+//                    0, 0,
+//                    new IndexedItem<>(i, this.pouchCap),
+//                    TOGGLER_INDEX_0, TOGGLER_INDEX_1, TOGGLER_PREDICATE
+//                ));
+            });
     }
 
     @SuppressWarnings("unchecked")
