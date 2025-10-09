@@ -1,9 +1,5 @@
 package net.qiyanamark.companionpouch.capability;
 
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.TextComponent;
-import net.qiyanamark.companionpouch.ModCompanionPouch;
-import net.qiyanamark.companionpouch.util.Structs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,7 +7,6 @@ import java.util.Optional;
 
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
@@ -61,7 +56,7 @@ public class ProviderStoragePouch implements ICapabilityProvider, INBTSerializab
 
     @Override
     @Implements(INBTSerializable.class)
-    public CompoundTag serializeNBT() {
+    public @NotNull CompoundTag serializeNBT() {
         return this.inner != null ? this.inner.serializeNBT() : new CompoundTag();
     }
 
@@ -80,15 +75,15 @@ public class ProviderStoragePouch implements ICapabilityProvider, INBTSerializab
         public HandlerStoragePouch(ItemStack pouchStack) {
             super(ItemPouchCompanion.DEFAULT_SLOT_COUNT);
             this.pouchStack = pouchStack;
-            CompoundTag pouchTag = this.pouchStack.getOrCreateTag();
+            this.pouchStack.getOrCreateTag();
 
-            this.deserializeNBT(pouchTag);
+            this.load();
         }
 
         @Override
         @Extends(ItemStackHandler.class)
         protected void onContentsChanged(int index) {
-            this.pouchTag().put(STORAGE_KEY, super.serializeNBT());
+            this.save();
         }
 
         @Override
@@ -102,7 +97,7 @@ public class ProviderStoragePouch implements ICapabilityProvider, INBTSerializab
         public void setActivationIndex(byte index) {
             if (index >= 0 && index < this.getSlots()) {
                 this.activationIndex = index;
-                this.saveChanges();
+                this.save();
             }
         }
 
@@ -132,18 +127,13 @@ public class ProviderStoragePouch implements ICapabilityProvider, INBTSerializab
 
         @Override
         @Implements(value = INBTSerializable.class, introducedBy = ItemStackHandler.class)
-        public CompoundTag serializeNBT() {
-            CompoundTag pouchTag = this.pouchTag();
+        public @NotNull CompoundTag serializeNBT() {
+            CompoundTag pouchTag = this.pouchTag().copy();
 
             pouchTag.put(STORAGE_KEY, super.serializeNBT());
             pouchTag.putByte(ACTIVATE_KEY, this.activationIndex);
 
-//            Structs.InstanceSide.get().ifClient(() -> {
-//                LocalPlayer lPlayer = ModCompanionPouch.getClientPlayer();
-//                lPlayer.sendMessage(new TextComponent("serializing pouch; activationIndex: "), lPlayer.getUUID());
-//            });
-
-            return pouchTag.copy();
+            return pouchTag;
         }
 
         @Override
@@ -163,12 +153,22 @@ public class ProviderStoragePouch implements ICapabilityProvider, INBTSerializab
             }
         }
 
-        public CompoundTag saveChanges() {
-            return this.serializeNBT();
+        public CompoundTag save() {
+            CompoundTag pouchTag = this.pouchTag();
+
+            pouchTag.put(STORAGE_KEY, super.serializeNBT());
+            pouchTag.putByte(ACTIVATE_KEY, this.activationIndex);
+
+            return pouchTag.copy();
         }
 
-        private CompoundTag pouchTag() {
-            return this.pouchStack.getOrCreateTag();
+        private void load() {
+            this.deserializeNBT(this.pouchTag());
+        }
+
+        @SuppressWarnings("ConstantConditions")
+        private @NotNull CompoundTag pouchTag() {
+            return this.pouchStack.getTag();
         }
     }
 }

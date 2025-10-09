@@ -3,20 +3,15 @@ package net.qiyanamark.companionpouch.mixins;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-import com.mojang.datafixers.util.Pair;
 import iskallia.vault.init.ModConfigs;
-import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-import net.minecraftforge.items.CapabilityItemHandler;
-import net.minecraftforge.items.IItemHandler;
 import net.qiyanamark.companionpouch.capability.IDataPouchCompanion;
 import net.qiyanamark.companionpouch.catalog.CatalogCapability;
-import net.qiyanamark.companionpouch.helper.HelperCompanions;
 import net.qiyanamark.companionpouch.util.Structs;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -62,7 +57,7 @@ public abstract class MixinCompanionItem {
                 .filter(companionStack -> !companionStack.isEmpty() && CompanionItem.isActive(companionStack) && CompanionItem.isOwner(companionStack, player))
                 .forEach((companionStack) -> grantVaultCompletionXP$itemCompanion(player, companionStack, experience));
 
-        CompoundTag nbt = pouchData.saveChanges();
+        CompoundTag nbt = pouchData.save();
         pouchStack.setTag(nbt);
     }
 
@@ -84,7 +79,7 @@ public abstract class MixinCompanionItem {
     )
     private static void grantVaultCompletionXP(Player player, int experience, CallbackInfo ci) {
         if (!player.level.isClientSide) {
-            Optional<ItemStack> pouchStackMaybe = Structs.LocationPouch.CURIO.getFromPlayer(player);
+            Optional<ItemStack> pouchStackMaybe = Structs.LocationPouch.CURIO.getFromEntity(player);
             pouchStackMaybe.ifPresentOrElse(
                     pouchStack -> grantVaultCompletionXP$pouch(player, pouchStack, experience),
                     () -> CompanionItem.getCompanion(player)

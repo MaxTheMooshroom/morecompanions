@@ -56,7 +56,7 @@ public class MenuInventoryPouchCompanion extends AbstractContainerMenu {
         Structs.LocationPouch location = IByteBufEnum.readByte(Structs.LocationPouch.class, buf);
         int slotCount = buf.readByte();
 
-        Optional<ItemStack> pouchStack = location.getFromPlayer(inv.player);
+        Optional<ItemStack> pouchStack = location.getFromEntity(inv.player);
         return pouchStack
                 .map(itemStack -> new MenuInventoryPouchCompanion(id, inv, itemStack, slotCount))
                 .orElse(null);

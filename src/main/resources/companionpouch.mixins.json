@@ -6,8 +6,7 @@
   "refmap": "companionpouch.refmap.json",
   "mixins": [
     "MixinCompanionCommand",
-    "MixinCompanionItem",
-    "MixinVaultPlayerEvents"
+    "MixinCompanionItem"
   ],
   "injectors": {
     "defaultRequire": 1
