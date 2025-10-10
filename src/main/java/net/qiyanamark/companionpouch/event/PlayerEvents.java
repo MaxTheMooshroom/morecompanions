@@ -23,7 +23,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -32,7 +31,6 @@ import net.qiyanamark.companionpouch.helper.HelperCompanions;
 import net.qiyanamark.companionpouch.util.Structs;
 
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 @Mod.EventBusSubscriber(modid = ModCompanionPouch.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -52,12 +50,16 @@ public class PlayerEvents {
             return;
         }
 
-        HelperCompanions.forEachCompanion(player, stack -> {
-            String companionName = CompanionItem.getPetName(stack);
-            boolean onCd = CompanionItem.isOnCooldown(stack);
-            CompanionItem.setActive(stack, !onCd);
+        HelperCompanions.forEachCompanion(player, companionStack -> {
+            if (CompanionItem.getCompanionHearts(companionStack) <= 0) {
+                return;
+            }
 
-            CompanionItem.getTemporalModifier(stack).ifPresent(rel -> {
+            String companionName = CompanionItem.getPetName(companionStack);
+            boolean onCd = CompanionItem.isOnCooldown(companionStack);
+            CompanionItem.setActive(companionStack, !onCd);
+
+            CompanionItem.getTemporalModifier(companionStack).ifPresent(rel -> {
                 if (temporals.contains(rel)) {
                     curseStack[0]++;
                 } else {
@@ -72,32 +74,30 @@ public class PlayerEvents {
             } else if (VaultUtils.isSpecialVault(vault)) {
                 player.sendMessage(new TextComponent("<" + companionName + "> I am too weak to modify this vault"), player.getUUID());
             } else {
-                if (CompanionItem.getCompanionHearts(stack) > 0 && CompanionItem.isActive(stack)) {
-                    perCompanionModifiers.clear();
-                    player.sendMessage(new TranslatableComponent("companion." + ModCompanionPouch.MOD_ID + ".relic.applied", companionName), player.getUUID());
+                perCompanionModifiers.clear();
+                player.sendMessage(new TranslatableComponent("companion." + ModCompanionPouch.MOD_ID + ".relic.applied", companionName), player.getUUID());
 
-                    CompanionItem.getAllRelics(stack).values().stream()
-                            .map(Pair::getSecond)
-                            .forEach(list -> {
-                                list.forEach(id -> {
-                                    VaultModifier<?> modifier = VaultModifierRegistry.get(id);
-                                    if (modifier != null) {
-                                        vault.get(Vault.MODIFIERS).addModifier(modifier, 1, true, JavaRandom.ofNanoTime());
-                                    }
-                                    perCompanionModifiers.add(id);
-                                });
-                            });
+                CompanionItem.getAllRelics(companionStack).values().stream()
+                    .map(Pair::getSecond)
+                    .forEach(list -> {
+                        list.forEach(id -> {
+                            VaultModifier<?> modifier = VaultModifierRegistry.get(id);
+                            if (modifier != null) {
+                                vault.get(Vault.MODIFIERS).addModifier(modifier, 1, true, JavaRandom.ofNanoTime());
+                            }
+                            perCompanionModifiers.add(id);
+                        });
+                    });
 
-                    perCompanionModifiers.stream()
-                            .filter(rel -> !rel.getPath().equals("companion_challenge"))
-                            .forEach(rel -> {
-                                if (modifiers.contains(rel)) {
-                                    curseStack[0] += 2;
-                                } else {
-                                    modifiers.add(rel);
-                                }
-                            });
-                }
+                perCompanionModifiers.stream()
+                    .filter(rel -> !rel.getPath().equals("companion_challenge"))
+                    .forEach(rel -> {
+                        if (modifiers.contains(rel)) {
+                            curseStack[0] += 2;
+                        } else {
+                            modifiers.add(rel);
+                        }
+                    });
             }
         });
 
@@ -118,7 +118,7 @@ public class PlayerEvents {
         Vault vault = event.getVault();
         if (!VaultUtils.isSpecialVault(vault) && player != null) {
             HelperCompanions.forEachCompanion(player, companionStack -> {
-                if (CompanionItem.getCompanionHearts(companionStack) == 0) {
+                if (CompanionItem.getCompanionHearts(companionStack) <= 0) {
                     return;
                 }
 
@@ -126,8 +126,8 @@ public class PlayerEvents {
                 ExpertiseTree expertises = PlayerExpertisesData.get(player.getLevel()).getExpertises(player);
 
                 float reduction = expertises.getAll(CompanionCooldownExpertise.class, Skill::isUnlocked).stream()
-                        .map(CompanionCooldownExpertise::getCooldownReduction)
-                        .reduce(0f, Float::sum);
+                    .map(CompanionCooldownExpertise::getCooldownReduction)
+                    .reduce(0f, Float::sum);
 
                 if (reduction > 0.0F) {
                     int current = CompanionItem.getCurrentCooldown(companionStack);
