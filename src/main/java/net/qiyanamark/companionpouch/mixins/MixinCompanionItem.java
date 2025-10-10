@@ -12,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 
 import net.qiyanamark.companionpouch.capability.IDataPouchCompanion;
 import net.qiyanamark.companionpouch.catalog.CatalogCapability;
+import net.qiyanamark.companionpouch.helper.HelperCompanions;
 import net.qiyanamark.companionpouch.util.Structs;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -46,20 +47,6 @@ public abstract class MixinCompanionItem {
         cir.setReturnValue(result);
         cir.cancel();
     }
-    
-    @Unique
-    private static void grantVaultCompletionXP$pouch(Player player, ItemStack pouchStack, int experience) {
-        IDataPouchCompanion pouchData = pouchStack.getCapability(CatalogCapability.COMPANION_POUCH_CAPABILITY)
-                .orElseThrow(IllegalStateException::new);
-
-        IntStream.range(0, pouchData.getSlots())
-                .mapToObj(pouchData::getStackInSlot)
-                .filter(companionStack -> !companionStack.isEmpty() && CompanionItem.isActive(companionStack) && CompanionItem.isOwner(companionStack, player))
-                .forEach((companionStack) -> grantVaultCompletionXP$itemCompanion(player, companionStack, experience));
-
-        CompoundTag nbt = pouchData.save();
-        pouchStack.setTag(nbt);
-    }
 
     @Unique
     private static void grantVaultCompletionXP$itemCompanion(Player player, ItemStack companionStack, int experience) {
@@ -79,13 +66,7 @@ public abstract class MixinCompanionItem {
     )
     private static void grantVaultCompletionXP(Player player, int experience, CallbackInfo ci) {
         if (!player.level.isClientSide) {
-            Optional<ItemStack> pouchStackMaybe = Structs.LocationPouch.CURIO.getFromEntity(player);
-            pouchStackMaybe.ifPresentOrElse(
-                    pouchStack -> grantVaultCompletionXP$pouch(player, pouchStack, experience),
-                    () -> CompanionItem.getCompanion(player)
-                            .filter(stack -> !stack.isEmpty() && CompanionItem.isActive(stack) && CompanionItem.isOwner(stack, player))
-                            .ifPresent(companionStack -> grantVaultCompletionXP$itemCompanion(player, companionStack, experience))
-            );
+            HelperCompanions.forEachCompanion(player, companionStack -> grantVaultCompletionXP$itemCompanion(player, companionStack, experience));
         }
         ci.cancel();
     }
