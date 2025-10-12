@@ -1,10 +1,13 @@
 package net.qiyanamark.companionpouch.screen;
 
+import iskallia.vault.item.CompanionItem;
+import net.minecraft.client.Minecraft;
 import net.qiyanamark.companionpouch.catalog.CatalogCapability;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
@@ -32,7 +35,7 @@ import net.qiyanamark.companionpouch.capability.IDataPouchCompanion;
 import net.qiyanamark.companionpouch.catalog.CatalogMenu;
 import net.qiyanamark.companionpouch.helper.HelperCompanions;
 import net.qiyanamark.companionpouch.menu.container.MenuInterfacePouchCompanion;
-import net.qiyanamark.companionpouch.network.PacketRequestActivationTemporal;
+import net.qiyanamark.companionpouch.network.PacketRequestActionTemporal;
 import net.qiyanamark.companionpouch.util.CompositeTexture.ComponentTexture;
 import net.qiyanamark.companionpouch.util.Structs.Vec2i;
 import net.qiyanamark.companionpouch.util.annotations.Extends;
@@ -78,15 +81,17 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
                 boolean canUseTemporal = HelperCompanions.companionCanUseTemporalInVault(slot.getItem(), vaultMaybe);
 
                 this.buttons.add(new ToggleButton<>(
+                        this,
                     0, 0,
                     new IndexedItem<>(i, canUseTemporal),
                     ACTIVATOR_STATE_0, ACTIVATOR_STATE_1, ACTIVATOR_PREDICATE
                 ));
-//                this.buttons.add(new ToggleButton<>(
-//                    0, 0,
-//                    new IndexedItem<>(i, this.pouchCap),
-//                    TOGGLER_INDEX_0, TOGGLER_INDEX_1, TOGGLER_PREDICATE
-//                ));
+                this.buttons.add(new ToggleButton<>(
+                    this,
+                    0, 0,
+                    new IndexedItem<>(i, this.pouchCap),
+                    TOGGLER_INDEX_0, TOGGLER_INDEX_1, TOGGLER_PREDICATE
+                ));
             });
     }
 
@@ -100,26 +105,26 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
         Vec2i offset = new Vec2i(this.leftPos, this.topPos);
 
         this.buttons.stream()
-                .map(button -> (ToggleButton<IndexedItem<?>>) button)
-                .forEach(button -> {
-                    int i = button.state.index();
-                    Slot slot = this.menu.slots.get(i);
+            .map(button -> (ToggleButton<IndexedItem<?>>) button)
+            .forEach(button -> {
+                int i = button.state.index();
+                Slot slot = this.menu.slots.get(i);
 
-                    Vec2i slotPosCanonical = new Vec2i(slot.x, slot.y);
-                    Vec2i pos = slotPosCanonical.add(offset);
+                Vec2i slotPosCanonical = new Vec2i(slot.x, slot.y);
+                Vec2i pos = slotPosCanonical.add(offset);
 
-                    Vec2i buttonOffset = CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET;
-                    if (button.state.item() instanceof Boolean) {
-                        buttonOffset = CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET;
+                Vec2i buttonOffset = CatalogMenu.MENU_INTERFACE_SLOT_TOGGLE_OFFSET;
+                if (button.state.item() instanceof Boolean) {
+                    buttonOffset = CatalogMenu.MENU_INTERFACE_SLOT_ACTIVATE_OFFSET;
 
-                        boolean canUseTemporal = HelperCompanions.companionCanUseTemporalInVault(slot.getItem(), vaultMaybe);
-                        button.setState(new IndexedItem<>(i, canUseTemporal));
-                    }
+                    boolean canUseTemporal = HelperCompanions.companionCanUseTemporalInVault(slot.getItem(), vaultMaybe);
+                    button.setState(new IndexedItem<>(i, canUseTemporal));
+                }
 
-                    Vec2i newPos = buttonOffset.add(pos);
-                    button.x = newPos.x();
-                    button.y = newPos.y();
-                });
+                Vec2i newPos = buttonOffset.add(pos);
+                button.x = newPos.x();
+                button.y = newPos.y();
+            });
     }
 
     @Override
@@ -201,13 +206,15 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
 
     public static class ToggleButton<State> extends AbstractButton {
         protected static final TextComponent EMPTY = new TextComponent("");
+        public final ScreenInterfacePouchCompanion screen;
         protected final ButtonData<State> dataOn;
         protected final ButtonData<State> dataOff;
         protected final Predicate<State> isOn;
         protected State state;
 
-        public ToggleButton(int x, int y, State initialState, ButtonData<State> dataOn, ButtonData<State> dataOff, Predicate<State> isOn) {
+        public ToggleButton(ScreenInterfacePouchCompanion screen, int x, int y, State initialState, ButtonData<State> dataOn, ButtonData<State> dataOff, Predicate<State> isOn) {
             super(x, y, dataOn.texture.getSize().x(), dataOn.texture.getSize().y(), EMPTY);
+            this.screen = screen;
             this.dataOn = dataOn;
             this.dataOff = dataOff;
             this.isOn = isOn;
@@ -291,16 +298,19 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
 
     private static void onActivatorClick(ToggleButton<IndexedItem<Boolean>> button) {
         IndexedItem<Boolean> wrapped = button.getState();
-        PacketRequestActivationTemporal.sendToServer((byte) wrapped.index());
+        PacketRequestActionTemporal.Actions.ACTIVATE.sendToServer((byte) wrapped.index());
         button.setState(new IndexedItem<>(wrapped.index(), false));
     }
 
     private static void onTogglerClick(ToggleButton<IndexedItem<IDataPouchCompanion>> button) {
         IndexedItem<IDataPouchCompanion> pair = button.getState();
+        PacketRequestActionTemporal.Actions.SET_SELECTED.sendToServer((byte) pair.index());
+        Vault v = VaultUtils.getVault(Objects.requireNonNull(Minecraft.getInstance().level)).orElseThrow();
+        CompanionItem.markTemporalUsed(button.screen.menu.getPouchStack(), v.get(Vault.ID));
         pair.item().setActivationIndex((byte) pair.index());
     }
 
-    private static final ToggleButton.ButtonData<IndexedItem<Boolean>> ACTIVATOR_STATE_0 = ToggleButton.ButtonData.<IndexedItem<Boolean>>of(
+    private static final ToggleButton.ButtonData<IndexedItem<Boolean>> ACTIVATOR_STATE_0 = ToggleButton.ButtonData.of(
         "Activate Temporal",
         CatalogMenu.ACTIVATE_READY,
         (ToggleButton.OnClick<? extends IndexedItem<Boolean>>) ScreenInterfacePouchCompanion::onActivatorClick,
@@ -308,7 +318,7 @@ public class ScreenInterfacePouchCompanion extends AbstractContainerScreen<MenuI
         (Predicate<? extends IndexedItem<Boolean>>) Pair::getSecond
     );
 
-    private static final ToggleButton.ButtonData<IndexedItem<Boolean>> ACTIVATOR_STATE_1 = ToggleButton.ButtonData.<IndexedItem<Boolean>>of(
+    private static final ToggleButton.ButtonData<IndexedItem<Boolean>> ACTIVATOR_STATE_1 = ToggleButton.ButtonData.of(
         "Resting...",
         CatalogMenu.ACTIVATE_RESTING,
         (ToggleButton.OnClick<? extends IndexedItem<Boolean>>) ScreenInterfacePouchCompanion::onActivatorClick,

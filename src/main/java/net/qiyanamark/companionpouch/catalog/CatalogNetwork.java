@@ -8,13 +8,14 @@ import java.util.function.Supplier;
 
 import net.minecraft.network.Connection;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 import net.qiyanamark.companionpouch.ModCompanionPouch;
-import net.qiyanamark.companionpouch.network.PacketRequestActivationTemporal;
+import net.qiyanamark.companionpouch.network.PacketRequestActionTemporal;
 import net.qiyanamark.companionpouch.network.PacketRequestOpenInterfacePouch;
 import net.qiyanamark.companionpouch.network.PacketRequestOpenInventoryPouch;
 
@@ -29,7 +30,7 @@ public class CatalogNetwork {
     public static void register() {
         registerMessage("1", PacketRequestOpenInterfacePouch.class, CatalogNetwork::nopEncode, CatalogNetwork.nopDecode(PacketRequestOpenInterfacePouch.INSTANCE), PacketRequestOpenInterfacePouch::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         registerMessage("1", PacketRequestOpenInventoryPouch.class, CatalogNetwork::nopEncode, CatalogNetwork.nopDecode(PacketRequestOpenInventoryPouch.INSTANCE), PacketRequestOpenInventoryPouch::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
-        registerMessage("1", PacketRequestActivationTemporal.class, PacketRequestActivationTemporal::encode, PacketRequestActivationTemporal::decode, PacketRequestActivationTemporal::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        registerMessage("1", PacketRequestActionTemporal.class, PacketRequestActionTemporal::encode, PacketRequestActionTemporal::decode, PacketRequestActionTemporal::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
     }
 
     public static <MSG> void registerMessage(String protocolVersion, Class<MSG> messageType, BiConsumer<MSG, FriendlyByteBuf> encoder, Function<FriendlyByteBuf, MSG> decoder, BiConsumer<MSG, Supplier<NetworkEvent.Context>> messageConsumer) {
@@ -42,6 +43,10 @@ public class CatalogNetwork {
 
     public static <MSG> void sendToServer(MSG msg) {
         CatalogNetwork.CHANNEL.sendToServer(msg);
+    }
+
+    public static <MSG> void sendToClient(ServerPlayer sPlayer, MSG msg) {
+        sendTo(msg, sPlayer.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
     }
 
     public static <MSG> void sendTo(MSG message, Connection manager, NetworkDirection direction) {
