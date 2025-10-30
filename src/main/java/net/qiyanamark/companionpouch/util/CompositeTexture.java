@@ -1,5 +1,7 @@
 package net.qiyanamark.companionpouch.util;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Objects;
 import java.util.Optional;
 
@@ -23,7 +25,6 @@ import net.minecraft.resources.ResourceLocation;
 
 import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.util.Structs.Vec2i;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a composite texture resource that can be managed and drawn
@@ -50,6 +51,7 @@ public class CompositeTexture {
     /**
      * The GPU texture reference when uploaded, if present.
      */
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private Optional<AbstractTexture> texture = Optional.empty();
 
     /**
@@ -91,6 +93,14 @@ public class CompositeTexture {
         this(ModCompanionPouch.rel(rel));
     }
 
+    /**
+     * Returns the resource location for the backing texture.
+     *
+     * @return The backing resource location
+     */
+    public ResourceLocation getRel() {
+        return this.rel;
+    }
 
     /**
      * Creates a {@link ComponentTexture} for a subregion of this texture.
@@ -127,7 +137,7 @@ public class CompositeTexture {
                 return;
             }
 
-            this.texture.get().releaseId();
+            this.texture.orElseThrow().releaseId();
             this.texture = Optional.empty();
 
             Minecraft.getInstance().getTextureManager().release(this.rel);
@@ -143,6 +153,13 @@ public class CompositeTexture {
      * </p>
      */
     public static class ComponentTexture {
+        /**
+         * @return the parent {@link CompositeTexture}
+         */
+        public CompositeTexture getParent() {
+            return this.parent;
+        }
+
         /**
          * @return a copy of this component's top-left coordinate within the parent
          */
@@ -247,9 +264,9 @@ public class CompositeTexture {
          * @param y         screen-space y offset
          * 
          * @apiNote
-         * for consecutive uses, {@link #blit(RenderContext, int, int)} within a
-         * {@link RenderAction} provided to {@link #bindFor(PoseStack, RenderAction)}
-         * should be preferred, as it handles setup only once for the entire render action
+         * For consecutive uses, use of this method within a {@link RenderAction} provided
+         * to {@link #bindFor(PoseStack, RenderAction)} should be preferred, as it handles
+         * setup only once for the entire render action.
          */
         public void blit(PoseStack poseStack, int x, int y) {
             RenderContext ctx = new RenderContext(poseStack);
@@ -264,9 +281,9 @@ public class CompositeTexture {
          * @param pos screen-space position
          * 
          * @apiNote
-         * for consecutive uses, {@link #blit(RenderContext, Vec2i)} within a
-         * {@link RenderAction} provided to {@link #bindFor(PoseStack, RenderAction)}
-         * should be preferred, as it handles setup only once for the entire render action
+         * For consecutive uses, use of this method within a {@link RenderAction} provided
+         * to {@link #bindFor(PoseStack, RenderAction)} should be preferred, as it handles
+         * setup only once for the entire render action.
          */
         public void blit(RenderContext ctx, Vec2i pos) {
             this.blit(ctx, pos.x(), pos.y());
@@ -287,6 +304,7 @@ public class CompositeTexture {
         protected final Vec2i texturePosition;
         protected final Vec2i size;
 
+        @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         protected Optional<VertexBuffer> vbo = Optional.empty();
 
         private ComponentTexture(CompositeTexture parent, Vec2i texturePosition, Vec2i size) {
@@ -352,7 +370,7 @@ public class CompositeTexture {
     }
 
     @FunctionalInterface
-    public static interface RenderAction {
+    public interface RenderAction {
         void run(RenderContext ctx);
     }
 
@@ -378,7 +396,7 @@ public class CompositeTexture {
      *
      * @param callable action to execute
      */
-    private static void executeOnRenderThread(RenderCall callable) {
+    protected static void executeOnRenderThread(RenderCall callable) {
         if (RenderSystem.isOnRenderThread()) {
             callable.execute();
         } else {
@@ -390,7 +408,7 @@ public class CompositeTexture {
      * Uploads the concrete texture to GPU memory, if not already uploaded.
      * Must be called on the render thread.
      */
-    private void _upload() {
+    protected void _upload() {
         RenderSystem.assertOnRenderThread();
 
         TextureManager texManager = Minecraft.getInstance().getTextureManager();
@@ -402,7 +420,7 @@ public class CompositeTexture {
      * Binds this texture to the active OpenGL context.
      * Must be called on the render thread.
      */
-    private void _bind() {
+    protected void _bind() {
         RenderSystem.assertOnRenderThread();
 
         int textureId = this.texture.orElseThrow().getId();
@@ -413,7 +431,7 @@ public class CompositeTexture {
      * Prepares the active shader and sets the bound texture for rendering.
      * Must be called on the render thread.
      */
-    private void _prepare() {
+    protected void _prepare() {
         RenderSystem.assertOnRenderThread();
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem._setShaderTexture(0, this.texture.orElseThrow().getId());
@@ -423,7 +441,7 @@ public class CompositeTexture {
      * Ensures this texture is uploaded, bound, and prepared, scheduling on the
      * render thread if needed.
      */
-    private void bind() {
+    protected void bind() {
         CompositeTexture.executeOnRenderThread(() -> {
             if (this.texture.isEmpty()) {
                 this._upload();
@@ -437,7 +455,7 @@ public class CompositeTexture {
      * Indicates whether a resource exists only CPU-side or if has been
      * uploaded to the GPU.
      */
-    private static enum HardwareSide {
+    protected enum HardwareSide {
         CPU,
         GPU
     }

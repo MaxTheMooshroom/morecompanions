@@ -16,8 +16,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 
 import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.network.PacketRequestActionTemporal;
-import net.qiyanamark.companionpouch.network.PacketRequestOpenInterfacePouch;
-import net.qiyanamark.companionpouch.network.PacketRequestOpenInventoryPouch;
+import net.qiyanamark.companionpouch.network.PacketRequestOpenPouchMenu;
 
 public class CatalogNetwork {
     private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -28,17 +27,16 @@ public class CatalogNetwork {
     );
 
     public static void register() {
-        registerMessage("1", PacketRequestOpenInterfacePouch.class, CatalogNetwork::nopEncode, CatalogNetwork.nopDecode(PacketRequestOpenInterfacePouch.INSTANCE), PacketRequestOpenInterfacePouch::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
-        registerMessage("1", PacketRequestOpenInventoryPouch.class, CatalogNetwork::nopEncode, CatalogNetwork.nopDecode(PacketRequestOpenInventoryPouch.INSTANCE), PacketRequestOpenInventoryPouch::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        registerMessage("1", PacketRequestOpenPouchMenu.class, PacketRequestOpenPouchMenu::encode, PacketRequestOpenPouchMenu::decode, PacketRequestOpenPouchMenu::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         registerMessage("1", PacketRequestActionTemporal.class, PacketRequestActionTemporal::encode, PacketRequestActionTemporal::decode, PacketRequestActionTemporal::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
     }
 
     public static <MSG> void registerMessage(String protocolVersion, Class<MSG> messageType, BiConsumer<MSG, FriendlyByteBuf> encoder, Function<FriendlyByteBuf, MSG> decoder, BiConsumer<MSG, Supplier<NetworkEvent.Context>> messageConsumer) {
-        CatalogNetwork.CHANNEL.registerMessage(next(), messageType, encoder, decoder, messageConsumer);
+        CatalogNetwork.CHANNEL.registerMessage(id_count++, messageType, encoder, decoder, messageConsumer);
     }
 
     public static <MSG> void registerMessage(String protocolVersion, Class<MSG> messageType, BiConsumer<MSG, FriendlyByteBuf> encoder, Function<FriendlyByteBuf, MSG> decoder, BiConsumer<MSG, Supplier<NetworkEvent.Context>> messageConsumer, final Optional<NetworkDirection> networkDirection) {
-        CatalogNetwork.CHANNEL.registerMessage(next(), messageType, encoder, decoder, messageConsumer, networkDirection);
+        CatalogNetwork.CHANNEL.registerMessage(id_count++, messageType, encoder, decoder, messageConsumer, networkDirection);
     }
 
     public static <MSG> void sendToServer(MSG msg) {
@@ -58,10 +56,6 @@ public class CatalogNetwork {
     private static final String VERSION = "1";
     private static final String[] VERSION_ENCODE_SUPPORTED = new String[] { "1" };
     private static final String[] VERSION_DECODE_SUPPORTED = new String[] { "1" };
-
-    private static int next() {
-        return id_count++;
-    }
 
     private static String getNetworkProtocolVersion() {
         return VERSION;

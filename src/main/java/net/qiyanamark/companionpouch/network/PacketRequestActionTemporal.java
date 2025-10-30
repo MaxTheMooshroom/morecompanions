@@ -1,23 +1,17 @@
 package net.qiyanamark.companionpouch.network;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Supplier;
 
-import com.mojang.datafixers.util.Pair;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
 
 import net.minecraftforge.network.NetworkEvent;
-import net.qiyanamark.companionpouch.capability.IDataPouchCompanion;
-import net.qiyanamark.companionpouch.catalog.CatalogCapability;
 import net.qiyanamark.companionpouch.catalog.CatalogNetwork;
-import net.qiyanamark.companionpouch.util.IByteBufEnum;
-import net.qiyanamark.companionpouch.util.Structs;
+import net.qiyanamark.companionpouch.container.ContainerItemCurioPouch;
 
 public class PacketRequestActionTemporal {
-    public enum Actions implements IByteBufEnum<Actions> {
+    public enum Actions {
         ACTIVATE,
         SET_SELECTED;
 
@@ -25,6 +19,9 @@ public class PacketRequestActionTemporal {
             CatalogNetwork.sendToServer(new PacketRequestActionTemporal(this, index));
         }
     }
+
+    public static final Actions ACTIVATE = Actions.ACTIVATE;
+    public static final Actions SET_SELECTED = Actions.SET_SELECTED;
 
     private final Actions action;
     private final byte companionIndex;
@@ -35,12 +32,12 @@ public class PacketRequestActionTemporal {
     }
 
     public void encode(FriendlyByteBuf buf) {
-        this.action.writeByte(buf);
+        buf.writeEnum(this.action);
         buf.writeByte(this.companionIndex);
     }
 
     public static PacketRequestActionTemporal decode(FriendlyByteBuf buf) {
-        Actions action = IByteBufEnum.readByte(Actions.class, buf);
+        Actions action = buf.readEnum(Actions.class);
         byte index = buf.readByte();
 
         return new PacketRequestActionTemporal(action, index);
@@ -53,17 +50,12 @@ public class PacketRequestActionTemporal {
             ServerPlayer sPlayer = Objects.requireNonNull(ctx.getSender());
             byte companionIndex = request.companionIndex;
 
-            Optional<Pair<Structs.LocationPouch, ItemStack>> pouchLocationMaybe = Structs.LocationPouch.findOnPlayer(sPlayer);
-            pouchLocationMaybe.ifPresent(pair -> {
-                IDataPouchCompanion pouchData = pair.getSecond()
-                    .getCapability(CatalogCapability.COMPANION_POUCH_CAPABILITY)
-                    .orElseThrow(IllegalStateException::new);
-
-                switch (request.action) {
-                    case ACTIVATE -> pouchData.tryActivateTemporal(companionIndex, sPlayer);
-                    case SET_SELECTED -> pouchData.setActivationIndex(companionIndex);
-                }
-            });
+            ContainerItemCurioPouch container = new ContainerItemCurioPouch(sPlayer);
+            switch (request.action) {
+                case ACTIVATE -> container.tryActivateTemporal(companionIndex);
+                case SET_SELECTED -> container.setActivationIndex(companionIndex);
+            }
+            container.save();
         });
 
         ctx.setPacketHandled(true);

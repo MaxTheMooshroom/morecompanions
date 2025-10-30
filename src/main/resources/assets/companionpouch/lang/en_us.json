@@ -3,5 +3,9 @@
   "screen.companionpouch.inventory_pouch_companion": "Companion Pouch",
   "screen.companionpouch.interface_pouch_companion": "Companion Pouch",
   "curios.identifier.pouch_companion": "Companion Pouch",
-  "companion.companionpouch.relic.applied": "<%s> My relics have been applied!"
+  "companion.companionpouch.relic.applied": "<%s> My relics have been applied!",
+  "screen.companionpouch.interface_pouch_companion.slider.off": "",
+  "screen.companionpouch.interface_pouch_companion.slider.on": "Use this companion's temporal when using the hotkey",
+  "screen.companionpouch.interface_pouch_companion.push.on": "Activate Temporal",
+  "screen.companionpouch.interface_pouch_companion.push.off": "Resting..."
 }

@@ -17,6 +17,6 @@ public class CatalogItem {
     static {
         REGISTRY = DeferredRegister.create(ForgeRegistries.ITEMS, ModCompanionPouch.MOD_ID);
 
-        COMPANION_POUCH = REGISTRY.register(ItemPouchCompanion.REL_PATH, () -> new ItemPouchCompanion());
+        COMPANION_POUCH = REGISTRY.register(ItemPouchCompanion.REL_PATH, ItemPouchCompanion::new);
     }
 }

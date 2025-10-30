@@ -1,23 +1,26 @@
 package net.qiyanamark.companionpouch.util;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collector;
+
 import com.mojang.datafixers.util.Pair;
+
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+
 import net.qiyanamark.companionpouch.catalog.CatalogItem;
 import net.qiyanamark.companionpouch.item.ItemPouchCompanion;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotResult;
-
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collector;
 
 public class Structs {
     public record Vec2(float x, float y) {
@@ -74,7 +77,7 @@ public class Structs {
         }
 
         @Override
-        public String toString() {
+        public @NotNull String toString() {
             return "Vec2i<" + this.x + ", " + this.y + ">";
         }
     }
@@ -102,12 +105,18 @@ public class Structs {
         public Vertex2D(Vec2 pos) { this(pos, Optional.empty(), Optional.empty()); }
 
         public Vertex2D copy() {
-            return new Vertex2D(this.pos.copy(), this.color.map(c -> c.copy()), this.uv.map(uv -> uv.copy()));
+            return new Vertex2D(this.pos.copy(), this.color.map(Vec4::copy), this.uv.map(Vec2i::copy));
         }
     }
 
     public static class WriteOnce<T> {
-        private @Nullable T inner = null;
+        private final Object lock = new Object();
+        private volatile boolean written = false;
+        private @Nullable T inner;
+
+        private WriteOnce(@Nullable T initial) {
+            this.inner = initial;
+        }
 
         public static <T> WriteOnce<T> of(T value) {
             return new WriteOnce<>(value);
@@ -118,10 +127,16 @@ public class Structs {
         }
 
         public void write(T value) {
-            if (this.inner != null) {
-                throw new IllegalStateException("Cannot set the value of a WriteOnce that already has a value set");
+            if (!this.written) {
+                synchronized (this.lock) {
+                    if (!this.written) {
+                        this.written = true;
+                        this.inner = value;
+                        return;
+                    }
+                }
             }
-            this.inner = value;
+            throw new IllegalStateException("Cannot set the value of a WriteOnce that already has a value set");
         }
 
         public @NotNull T read() {
@@ -133,10 +148,6 @@ public class Structs {
 
         public @NotNull Optional<T> tryRead() {
             return Optional.ofNullable(this.inner);
-        }
-
-        private WriteOnce(@Nullable T initial) {
-            this.inner = initial;
         }
     }
 
@@ -195,7 +206,7 @@ public class Structs {
         }
     }
 
-    public enum LocationPouch implements IByteBufEnum<LocationPouch> {
+    public enum LocationPouch {
         MAIN_HAND,
         OFF_HAND,
         CURIO;
@@ -226,11 +237,8 @@ public class Structs {
                 case MAIN_HAND -> Optional.of(entity.getMainHandItem());
                 case OFF_HAND -> Optional.of(entity.getOffhandItem());
                 case CURIO -> CuriosApi.getCuriosHelper()
-                        .findFirstCurio(
-                                entity,
-                                stack -> stack.getItem() == CatalogItem.COMPANION_POUCH.get()
-                        )
-                        .map(SlotResult::stack);
+                    .findFirstCurio(entity, stack -> stack.getItem() == CatalogItem.COMPANION_POUCH.get())
+                    .map(SlotResult::stack);
                 default -> Optional.empty();
             };
         }

@@ -1,11 +1,12 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "net.qiyanamark.companionpouch.mixins",
+  "package": "net.qiyanamark.companionpouch.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "companionpouch.refmap.json",
   "mixins": [
     "MixinCompanionCommand",
+    "MixinCompanionCommand$ArgumentInjector",
     "MixinCompanionItem"
   ],
   "injectors": {

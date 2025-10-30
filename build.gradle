@@ -159,11 +159,11 @@ dependencies {
     // then special handling is done to allow a setup of a vanilla dependency without the use of an external repository.
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    compileOnly annotationProcessor('io.github.llamalad7:mixinextras-common:0.3.3')
+    compileOnly annotationProcessor('io.github.llamalad7:mixinextras-common:0.5.0')
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    implementation(jarJar('io.github.llamalad7:mixinextras-forge:0.3.3')) {
-        jarJar.ranged(it, '[0.3.3,)')
+    implementation(jarJar('io.github.llamalad7:mixinextras-forge:0.5.0')) {
+        jarJar.ranged(it, '[0.5.0,)')
     }
 
     implementation 'org.jetbrains:annotations:24.0.0'
@@ -224,4 +224,9 @@ tasks.named('jar', Jar).configure {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.compilerArgs += ['--add-exports', 'java.base/jdk.internal.misc=ALL-UNNAMED']
+}
+
+tasks.withType(JavaExec).configureEach {
+    systemProperty "mixin.debug.export", "true"
 }

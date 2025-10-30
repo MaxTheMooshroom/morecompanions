@@ -1,51 +1,49 @@
-package net.qiyanamark.companionpouch.mixins;
+package net.qiyanamark.companionpouch.mixin;
 
 import java.util.Optional;
-import java.util.stream.IntStream;
 
-import iskallia.vault.init.ModConfigs;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-import net.qiyanamark.companionpouch.capability.IDataPouchCompanion;
-import net.qiyanamark.companionpouch.catalog.CatalogCapability;
-import net.qiyanamark.companionpouch.helper.HelperCompanions;
-import net.qiyanamark.companionpouch.util.Structs;
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import iskallia.vault.init.ModConfigs;
+import iskallia.vault.init.ModItems;
+import iskallia.vault.item.CompanionItem;
+import net.qiyanamark.companionpouch.container.ContainerItemCurioPouch;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
 import top.theillusivec4.curios.api.CuriosApi;
-
-import iskallia.vault.item.CompanionItem;
 import top.theillusivec4.curios.api.SlotResult;
 
 @Mixin(value = CompanionItem.class, remap = false)
 public abstract class MixinCompanionItem {
-    @Inject(
-        at = @At("HEAD"),
-        method = "getCompanion(Lnet/minecraft/world/entity/LivingEntity;)Ljava/util/Optional;",
-        cancellable = true
+    @WrapMethod(
+        method = "getCompanion(Lnet/minecraft/world/entity/LivingEntity;)Ljava/util/Optional;"
     )
-    private static void getCompanion(LivingEntity entity, CallbackInfoReturnable<Optional<ItemStack>> cir) {
+    private static Optional<ItemStack> getCompanion(LivingEntity entity, Operation<Optional<ItemStack>> getCompanion) {
         if (entity.isSpectator()) {
-            cir.setReturnValue(Optional.empty());
-            cir.cancel();
-            return;
+            return Optional.empty();
         }
 
-        Optional<ItemStack> result = CuriosApi.getCuriosHelper()
+        ItemStack handStack = entity.getMainHandItem();
+        if (handStack.is(ModItems.COMPANION)) {
+            return Optional.of(handStack);
+        }
+
+        handStack = entity.getOffhandItem();
+        if (handStack.is(ModItems.COMPANION)) {
+            return Optional.of(handStack);
+        }
+
+        return CuriosApi.getCuriosHelper()
             .findFirstCurio(entity, slot -> slot.getItem() instanceof CompanionItem)
             .map(SlotResult::stack);
-
-        cir.setReturnValue(result);
-        cir.cancel();
     }
 
     @Unique
@@ -60,14 +58,15 @@ public abstract class MixinCompanionItem {
     }
 
     @Inject(
-            at = @At("HEAD"),
-            method = "grantVaultCompletionXP(Lnet/minecraft/world/entity/player/Player;I)V",
-            cancellable = true
+        method = "grantVaultCompletionXP(Lnet/minecraft/world/entity/player/Player;I)V",
+        at = @At(
+            value = "INVOKE",
+            target = "Liskallia/vault/item/CompanionItem;getCompanion(Lnet/minecraft/world/entity/LivingEntity;)Ljava/util/Optional;"
+        )
     )
     private static void grantVaultCompletionXP(Player player, int experience, CallbackInfo ci) {
-        if (!player.level.isClientSide) {
-            HelperCompanions.forEachCompanion(player, companionStack -> grantVaultCompletionXP$itemCompanion(player, companionStack, experience));
-        }
-        ci.cancel();
+        (new ContainerItemCurioPouch(player)).getCompanions()
+            .peek(companionStack -> grantVaultCompletionXP$itemCompanion(player, companionStack, experience))
+            .close();
     }
 }
