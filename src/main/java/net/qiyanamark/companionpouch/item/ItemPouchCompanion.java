@@ -1,14 +1,14 @@
 package net.qiyanamark.companionpouch.item;
 
-import net.qiyanamark.companionpouch.capability.ProviderStoragePouch;
 import org.jetbrains.annotations.NotNull;
-import javax.annotation.Nullable;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import javax.annotation.Nullable;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -26,20 +26,17 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.network.NetworkHooks;
-
-import top.theillusivec4.curios.api.SlotContext;
-import top.theillusivec4.curios.api.type.capability.ICurioItem;
-
+import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.capability.IDataPouchCompanion;
+import net.qiyanamark.companionpouch.capability.ProviderStoragePouch;
 import net.qiyanamark.companionpouch.catalog.CatalogCapability;
 import net.qiyanamark.companionpouch.menu.container.MenuInterfacePouchCompanion;
 import net.qiyanamark.companionpouch.menu.container.MenuInventoryPouchCompanion;
-import net.qiyanamark.companionpouch.ModCompanionPouch;
+import net.qiyanamark.companionpouch.util.Structs;
 import net.qiyanamark.companionpouch.util.annotations.Extends;
 import net.qiyanamark.companionpouch.util.annotations.Implements;
-import net.qiyanamark.companionpouch.util.Structs;
-
-import iskallia.vault.world.data.VaultPlayerStats;
+import top.theillusivec4.curios.api.SlotContext;
+import top.theillusivec4.curios.api.type.capability.ICurioItem;
 
 import static iskallia.vault.init.ModItems.VAULT_MOD_GROUP;
 
@@ -68,29 +65,33 @@ public class ItemPouchCompanion extends Item implements ICurioItem {
     public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
         ItemStack pouchStack = player.getItemInHand(hand);
 
-        boolean success = false;
-        if (player instanceof ServerPlayer sPlayer) {
-            int slotCount = pouchStack.getCapability(CatalogCapability.COMPANION_POUCH_CAPABILITY)
-                    .map(IDataPouchCompanion::getSlots)
-                    .orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT);
-            Structs.LocationPouch location = Structs.LocationPouch.fromHand(hand);
-
-            if (!sPlayer.isCrouching()) {
-                SimpleMenuProvider provider = MenuInventoryPouchCompanion.getProvider(pouchStack, slotCount);
-                NetworkHooks.openGui(sPlayer, provider, buf -> {
-                    location.writeByte(buf);
-                    buf.writeByte(slotCount);
-                });
-                success = true;
-                
-            } else if (ModCompanionPouch.DEBUG) {
-                SimpleMenuProvider provider = MenuInterfacePouchCompanion.getProvider(pouchStack);
-                NetworkHooks.openGui(sPlayer, provider, buf -> buf.writeByte(slotCount));
-                success = true;
-            }
+        if (!(player instanceof ServerPlayer sPlayer)) {
+            return InteractionResultHolder.pass(pouchStack);
         }
 
-        return success ? InteractionResultHolder.sidedSuccess(pouchStack, level.isClientSide) : InteractionResultHolder.pass(pouchStack);
+        int slotCount = pouchStack.getCapability(CatalogCapability.COMPANION_POUCH_CAPABILITY)
+            .map(IDataPouchCompanion::getSlots)
+            .orElse(ItemPouchCompanion.DEFAULT_SLOT_COUNT);
+        Structs.LocationPouch location = Structs.LocationPouch.fromHand(hand);
+
+        if (!sPlayer.isCrouching()) {
+            SimpleMenuProvider provider = MenuInventoryPouchCompanion.getProvider(pouchStack, slotCount);
+            NetworkHooks.openGui(sPlayer, provider, buf -> {
+                location.writeByte(buf);
+                buf.writeByte(slotCount);
+            });
+
+            return InteractionResultHolder.sidedSuccess(pouchStack, level.isClientSide);
+
+        } else if (ModCompanionPouch.DEBUG) {
+            SimpleMenuProvider provider = MenuInterfacePouchCompanion.getProvider(pouchStack);
+            NetworkHooks.openGui(sPlayer, provider, buf -> buf.writeByte(slotCount));
+
+            return InteractionResultHolder.sidedSuccess(pouchStack, level.isClientSide);
+            
+        } else {
+            return InteractionResultHolder.pass(pouchStack);
+        }
     }
 
     @Override

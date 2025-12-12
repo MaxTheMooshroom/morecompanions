@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.mojang.datafixers.util.Pair;
+
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -60,7 +61,11 @@ public class PacketRequestActionTemporal {
                     .orElseThrow(IllegalStateException::new);
 
                 switch (request.action) {
-                    case ACTIVATE -> pouchData.tryActivateTemporal(companionIndex, sPlayer);
+                    case ACTIVATE -> {
+                        pouchData.tryActivateTemporal(companionIndex, sPlayer);
+                        pouchData.save();
+                        PacketRequestSyncPouch.sendToPlayer(sPlayer, pair.getFirst());
+                    }
                     case SET_SELECTED -> pouchData.setActivationIndex(companionIndex);
                 }
             });

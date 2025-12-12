@@ -1,12 +1,5 @@
 package net.qiyanamark.companionpouch;
 
-import iskallia.vault.core.vault.VaultUtils;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.qiyanamark.companionpouch.event.PlayerEvents;
-import net.qiyanamark.companionpouch.network.PacketRequestOpenInventoryPouch;
-import net.qiyanamark.companionpouch.util.Structs;
-import org.lwjgl.glfw.GLFW;
-
 import com.mojang.blaze3d.platform.InputConstants;
 
 import net.minecraft.client.Minecraft;
@@ -16,20 +9,24 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 
+import iskallia.vault.core.vault.VaultUtils;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-
 import net.qiyanamark.companionpouch.catalog.CatalogItem;
 import net.qiyanamark.companionpouch.catalog.CatalogMenu;
 import net.qiyanamark.companionpouch.catalog.CatalogNetwork;
 import net.qiyanamark.companionpouch.network.PacketRequestOpenInterfacePouch;
+import net.qiyanamark.companionpouch.network.PacketRequestOpenInventoryPouch;
 import net.qiyanamark.companionpouch.screen.ScreenInterfacePouchCompanion;
 import net.qiyanamark.companionpouch.screen.ScreenInventoryPouchCompanion;
+import net.qiyanamark.companionpouch.util.Structs;
+import org.lwjgl.glfw.GLFW;
 
 import static iskallia.vault.init.ModKeybinds.useCompanionTemporal;
 
@@ -39,7 +36,7 @@ public class ModCompanionPouch {
     public static final boolean DEBUG = false;
 
     public static ResourceLocation rel(String name) {
-        return new ResourceLocation(MOD_ID, name);
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
     }
 
     public ModCompanionPouch() {

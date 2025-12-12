@@ -1,6 +1,17 @@
 package net.qiyanamark.companionpouch.event;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import com.mojang.datafixers.util.Pair;
+
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
+
 import iskallia.vault.core.random.JavaRandom;
 import iskallia.vault.core.vault.Vault;
 import iskallia.vault.core.vault.VaultUtils;
@@ -17,21 +28,12 @@ import iskallia.vault.world.VaultMode;
 import iskallia.vault.world.data.PlayerAbilitiesData;
 import iskallia.vault.world.data.PlayerExpertisesData;
 import iskallia.vault.world.data.ServerVaults;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Mth;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.helper.HelperCompanions;
 import net.qiyanamark.companionpouch.util.Structs;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @Mod.EventBusSubscriber(modid = ModCompanionPouch.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class PlayerEvents {
@@ -102,10 +104,10 @@ public class PlayerEvents {
         });
 
         if (curseStack[0] > 3) {
-            VaultModifier<?> noFruit = VaultModifierRegistry.get(new ResourceLocation("the_vault", "modifier_type/player_no_vault_fruit"));
+            VaultModifier<?> noFruit = VaultModifierRegistry.get(ResourceLocation.fromNamespaceAndPath("the_vault", "modifier_type/player_no_vault_fruit"));
             vault.get(Vault.MODIFIERS).addModifier(noFruit, 1, true, JavaRandom.ofNanoTime());
         } else {
-            VaultModifier<?> companionCurse = VaultModifierRegistry.get(new ResourceLocation("the_vault", "companion_curse"));
+            VaultModifier<?> companionCurse = VaultModifierRegistry.get(ResourceLocation.fromNamespaceAndPath("the_vault", "companion_curse"));
             for (int i = 0; i < curseStack[0]; i++) {
                 vault.get(Vault.MODIFIERS).addModifier(companionCurse, 1, true, JavaRandom.ofNanoTime());
             }

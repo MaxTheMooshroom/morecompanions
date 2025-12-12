@@ -10,6 +10,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
+import iskallia.vault.core.vault.Vault;
+import iskallia.vault.core.vault.VaultUtils;
+import iskallia.vault.init.ModItems;
+import iskallia.vault.item.CompanionItem;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.INBTSerializable;
@@ -17,12 +21,6 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
-
-import iskallia.vault.core.vault.Vault;
-import iskallia.vault.core.vault.VaultUtils;
-import iskallia.vault.init.ModItems;
-import iskallia.vault.item.CompanionItem;
-
 import net.qiyanamark.companionpouch.catalog.CatalogCapability;
 import net.qiyanamark.companionpouch.helper.HelperCompanions;
 import net.qiyanamark.companionpouch.item.ItemPouchCompanion;
@@ -113,6 +111,7 @@ public class ProviderStoragePouch implements ICapabilityProvider, INBTSerializab
 
             if (HelperCompanions.companionCanUseTemporalInVault(companion, vaultMaybe)) {
                 CompanionItem.activateTemporalModifier(sPlayer, companion, vaultMaybe.orElseThrow());
+
                 return true;
             }
 
