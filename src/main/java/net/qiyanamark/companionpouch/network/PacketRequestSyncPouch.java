@@ -9,6 +9,9 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 import net.qiyanamark.companionpouch.ModCompanionPouch;
 import net.qiyanamark.companionpouch.catalog.CatalogNetwork;
@@ -34,14 +37,15 @@ public class PacketRequestSyncPouch {
         return new PacketRequestSyncPouch(location, nbt);
     }
 
+    @OnlyIn(Dist.CLIENT)
     public void handle(Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context ctx = ctxSupplier.get();
 
-        ctx.enqueueWork(() -> {
+        ctx.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
             LocalPlayer lPlayer = Objects.requireNonNull(ModCompanionPouch.getClientPlayer());
             ItemStack pouchStack = this.location.getFromEntity(lPlayer).orElseThrow();
             pouchStack.setTag(this.data);
-        });
+        }));
 
         ctx.setPacketHandled(true);
     }
