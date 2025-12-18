@@ -10,7 +10,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 import net.qiyanamark.companionpouch.ModCompanionPouch;
@@ -37,7 +36,6 @@ public class PacketRequestSyncPouch {
         return new PacketRequestSyncPouch(location, nbt);
     }
 
-    @OnlyIn(Dist.CLIENT)
     public void handle(Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context ctx = ctxSupplier.get();
 

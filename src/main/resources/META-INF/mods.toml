@@ -5,7 +5,7 @@ license = "MIT"
 
 [[mods]]
 modId = "companionpouch"
-version = "0.1.0"
+version = "1.1.1"
 displayName = "Companion Pouch"
 authors = "QiyanaMark, MaxTheMooshroom"
 description = '''Adds pouches that allow bringing more than one companion at a time into a vault'''
